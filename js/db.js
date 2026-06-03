@@ -166,8 +166,7 @@ function selectSessionQuestions(schedules, sessionNum, slen = 10) {
 
   const selected = [];
   selected.push(...shuffle(dueQ).slice(0, 4));
-  const newSlots = Math.min(6, slen - selected.length);
-  selected.push(...shuffle(newQ).slice(0, newSlots));
+  selected.push(...shuffle(newQ).slice(0, slen - selected.length));
   if (selected.length < slen) {
     selected.push(...upcoming.slice(0, slen - selected.length));
   }

@@ -99,6 +99,7 @@ function updateProg(){
 }
 
 function renderQ(){
+  if(S.cq >= S.session.length){finishQuiz();return;}
   const q=S.session[S.cq]; S.sel=null; S.submitted=false;
   const ph=q.passage.replace(/___/g,'<span class="blank">&nbsp;</span>');
   const opts=q.options.map((o,i)=>{
