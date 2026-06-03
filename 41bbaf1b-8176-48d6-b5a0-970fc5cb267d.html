@@ -1,0 +1,3620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AWL Trainer — Sublist 1</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f3;--bg3:#eeece8;
+  --txt:#1a1a18;--txt2:#6b6b67;--txt3:#9b9b96;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --acc:#1D9E75;--acc-bg:#E1F5EE;--acc-txt:#085041;
+  --dan:#D85A30;--dan-bg:#FAECE7;--dan-txt:#4A1B0C;
+  --warn-bg:#FAEEDA;--warn-txt:#633806;--warn-border:#C8820A;
+  --taboo-bg:#F0E8F8;--taboo-txt:#4A1875;--taboo-border:#8B45C8;
+  --rad:8px;--radl:12px
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1a;--bg2:#252522;--bg3:#2e2e2b;
+    --txt:#f0ede8;--txt2:#a8a8a2;--txt3:#6e6e68;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+    --acc-bg:#0a3d2a;--acc-txt:#6ee7b7;
+    --dan-bg:#3d1a0a;--dan-txt:#fca98a;
+    --warn-bg:#3d2a08;--warn-txt:#fcd17a;--warn-border:#C8820A;
+    --taboo-bg:#2a1840;--taboo-txt:#d4a8f8;--taboo-border:#8B45C8
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+#app{max-width:390px;margin:0 auto;padding:0 0 2rem}
+.screen{display:none}.screen.active{display:block}
+/* ── header ── */
+.hdr{padding:1.25rem 1rem 0.5rem;display:flex;align-items:center;gap:10px}
+.hdr-t{font-size:12px;font-weight:500;color:var(--txt2);letter-spacing:.07em;text-transform:uppercase}
+.back{background:none;border:.5px solid var(--border2);border-radius:var(--rad);cursor:pointer;color:var(--txt2);padding:5px 9px;font-size:16px}
+.back:hover{background:var(--bg2)}
+/* ── progress ── */
+.prog-wrap{padding:0 1rem;margin:.25rem 0 0}
+.prog-lbl{font-size:12px;color:var(--txt3);margin-bottom:5px}
+.prog-track{height:3px;background:var(--bg3);border-radius:2px}
+.prog-fill{height:100%;background:var(--acc);border-radius:2px;transition:width .4s}
+/* ── home ── */
+.hw{padding:1.5rem 1rem}
+.htitle{font-size:24px;font-weight:500;margin-bottom:4px}
+.hsub{font-size:14px;color:var(--txt2);margin-bottom:2rem}
+.mode-grid{display:flex;flex-direction:column;gap:12px}
+.mode-card{padding:1.25rem;border:.5px solid var(--border2);border-radius:var(--radl);background:var(--bg);cursor:pointer;display:flex;align-items:center;gap:16px;transition:all .12s}
+.mode-card:hover{background:var(--bg2)}
+.mode-icon{width:44px;height:44px;border-radius:var(--radl);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.mode-icon.study{background:var(--warn-bg)}
+.mode-icon.quiz{background:var(--acc-bg)}
+.mode-icon.taboo{background:var(--taboo-bg)}
+.mode-title{font-size:16px;font-weight:500;margin-bottom:3px}
+.mode-desc{font-size:13px;color:var(--txt2)}
+/* ── flashcard ── */
+.fc-wrap{padding:1rem}
+.fc-counter{font-size:12px;color:var(--txt3);text-align:center;margin-bottom:.75rem}
+.fc-card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radl);padding:1.75rem 1.5rem;min-height:240px;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:.5rem;cursor:pointer;transition:background .12s;position:relative}
+.fc-card:active{background:var(--bg3)}
+.fc-front{display:flex;flex-direction:column;align-items:center;gap:.4rem;width:100%}
+.fc-word{font-size:32px;font-weight:500;text-align:center}
+.fc-pos{font-size:13px;color:var(--txt3)}
+.fc-flip-hint{font-size:12px;color:var(--txt3);margin-top:.75rem;display:flex;align-items:center;gap:5px}
+.fc-back{width:100%;display:flex;flex-direction:column;gap:.85rem}
+.fc-divider{height:.5px;background:var(--border);width:100%}
+.fc-row{display:flex;flex-direction:column;gap:3px}
+.fc-lbl{font-size:11px;font-weight:500;color:var(--txt3);letter-spacing:.07em;text-transform:uppercase}
+.fc-val{font-size:15px;line-height:1.5}
+.fc-syn{color:var(--acc)}
+.fc-ant{color:var(--dan)}
+.fc-ex{font-style:italic;color:var(--txt2)}
+.fc-ex strong{font-style:normal;color:var(--txt);font-weight:500}
+.fc-nav{display:flex;gap:8px;margin-top:.75rem}
+.fc-btn{flex:1;padding:13px;border:.5px solid var(--border2);border-radius:var(--radl);background:var(--bg);color:var(--txt);font-size:14px;font-family:inherit;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.fc-btn:hover{background:var(--bg2)}
+.fc-btn.primary{background:var(--warn-bg);color:var(--warn-txt);border-color:var(--warn-border)}
+.fc-btn.primary:hover{opacity:.88}
+.fc-flip-btn{width:100%;padding:13px;border:.5px solid var(--border2);border-radius:var(--radl);background:var(--bg);color:var(--txt2);font-size:14px;font-family:inherit;cursor:pointer;margin-top:.75rem}
+.fc-flip-btn:hover{background:var(--bg2)}
+/* ── quiz ── */
+.pcard{margin:.75rem 1rem 0;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radl);padding:1.25rem}
+.badge{display:inline-block;font-size:11px;font-weight:500;color:var(--acc-txt);background:var(--acc-bg);padding:3px 10px;border-radius:20px;margin-bottom:.75rem}
+.passage{font-size:15px;line-height:1.7}
+.blank{display:inline-block;width:72px;border-bottom:1.5px solid var(--txt);vertical-align:baseline;margin:0 2px}
+.opts{padding:0 1rem;margin-top:.75rem;display:flex;flex-direction:column;gap:8px}
+.opt{width:100%;padding:14px 16px;border:.5px solid var(--border2);border-radius:var(--radl);background:var(--bg);color:var(--txt);font-size:15px;font-family:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;gap:12px;transition:background .12s}
+.opt:hover:not(:disabled){background:var(--bg2)}
+.opt-k{font-weight:500;font-size:13px;width:20px;flex-shrink:0}
+.submit-wrap{padding:0 1rem;margin-top:.75rem}
+.submit-btn{width:100%;padding:14px;border:none;border-radius:var(--radl);background:var(--acc);color:#fff;font-size:15px;font-weight:500;font-family:inherit;cursor:pointer}
+.submit-btn:disabled{opacity:.3;cursor:not-allowed}
+.submit-btn:not(:disabled):hover{opacity:.88}
+.fbcard{margin:.75rem 1rem 0;padding:1.25rem;border-radius:var(--radl);border:.5px solid var(--border);background:var(--bg2);animation:su .2s ease}
+@keyframes su{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+.fb-hd{display:flex;align-items:center;gap:8px;margin-bottom:.6rem}
+.fb-lbl{font-size:14px;font-weight:500}
+.fb-lbl.ok{color:var(--acc)}.fb-lbl.bad{color:var(--dan)}
+.fb-txt{font-size:14px;line-height:1.65}
+.nxt{display:block;margin:.75rem 1rem 0;width:calc(100% - 2rem);padding:14px;border:.5px solid var(--border2);border-radius:var(--radl);background:var(--bg);color:var(--txt);font-size:15px;font-weight:500;font-family:inherit;cursor:pointer}
+.nxt:hover{background:var(--bg2)}
+/* ── taboo ── */
+.taboo-setup{padding:1rem}
+.taboo-intro{font-size:14px;color:var(--txt2);margin-bottom:1.25rem;line-height:1.65}
+.taboo-start-btn{width:100%;padding:15px;border:none;border-radius:var(--radl);background:var(--taboo-border);color:#fff;font-size:16px;font-weight:500;font-family:inherit;cursor:pointer}
+.taboo-start-btn:hover{opacity:.9}
+.taboo-card-wrap{padding:1rem}
+.taboo-reveal-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:320px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--radl);padding:2rem 1.5rem;gap:1rem}
+.taboo-ready-lbl{font-size:13px;color:var(--txt3);text-align:center}
+.taboo-ready-word{font-size:18px;font-weight:500;color:var(--txt3);text-align:center;letter-spacing:.2em}
+.taboo-show-btn{padding:14px 32px;border:none;border-radius:var(--radl);background:var(--taboo-border);color:#fff;font-size:15px;font-weight:500;font-family:inherit;cursor:pointer}
+.taboo-show-btn:hover{opacity:.9}
+.taboo-card{width:100%;background:var(--taboo-bg);border:2px solid var(--taboo-border);border-radius:var(--radl);padding:1.5rem;display:flex;flex-direction:column;gap:1rem;animation:su .2s ease}
+.taboo-target-lbl{font-size:11px;font-weight:500;color:var(--taboo-txt);letter-spacing:.08em;text-transform:uppercase}
+.taboo-target-word{font-size:36px;font-weight:600;color:var(--taboo-txt);line-height:1.1}
+.taboo-target-pos{font-size:13px;color:var(--taboo-txt);opacity:.7}
+.taboo-forbidden-lbl{font-size:11px;font-weight:500;color:var(--dan);letter-spacing:.08em;text-transform:uppercase;margin-top:.25rem}
+.taboo-forbidden-list{display:flex;flex-wrap:wrap;gap:6px}
+.taboo-chip{padding:4px 12px;border:.5px solid var(--dan);border-radius:20px;font-size:13px;color:var(--dan-txt);background:var(--dan-bg);text-decoration:line-through}
+.taboo-timer{font-size:28px;font-weight:500;text-align:center;color:var(--taboo-txt);min-width:48px}
+.taboo-timer.warning{color:var(--dan)}
+.taboo-actions{display:flex;gap:8px;margin-top:.25rem}
+.taboo-pass{flex:1;padding:14px;border:.5px solid var(--border2);border-radius:var(--radl);background:var(--bg);color:var(--txt2);font-size:15px;font-family:inherit;cursor:pointer}
+.taboo-pass:hover{background:var(--bg2)}
+.taboo-got{flex:2;padding:14px;border:none;border-radius:var(--radl);background:var(--acc);color:#fff;font-size:15px;font-weight:500;font-family:inherit;cursor:pointer}
+.taboo-got:hover{opacity:.9}
+/* ── summary ── */
+.sw{padding:1.25rem 1rem}
+.sh{font-size:20px;font-weight:500;margin-bottom:3px}
+.ss{font-size:14px;color:var(--txt2);margin-bottom:1.25rem}
+.sgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:1.25rem}
+.sc{background:var(--bg2);border-radius:var(--radl);padding:1rem}
+.scl{font-size:12px;color:var(--txt2);margin-bottom:3px}
+.scv{font-size:24px;font-weight:500}
+.slbl{font-size:11px;font-weight:500;color:var(--txt3);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.missed-list{margin-bottom:1.5rem}
+.missed-item{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:.5px solid var(--border);font-size:13px}
+.missed-item:last-child{border-bottom:none}
+.missed-word{font-weight:500}
+.missed-def{color:var(--txt2);font-size:12px;max-width:60%;text-align:right}
+.again{width:100%;padding:14px;border:none;border-radius:var(--radl);background:var(--acc);color:#fff;font-size:15px;font-weight:500;font-family:inherit;cursor:pointer;margin-bottom:8px}
+.again:hover{opacity:.9}
+.hret{width:100%;padding:14px;border:.5px solid var(--border2);border-radius:var(--radl);background:var(--bg);color:var(--txt);font-size:15px;font-family:inherit;cursor:pointer}
+.hret:hover{background:var(--bg2)}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="hw">
+    <p class="htitle">AWL trainer</p>
+    <p class="hsub">Academic Word List · Sublist 1</p>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="startStudy()">
+        <div class="mode-icon study">🃏</div>
+        <div><div class="mode-title">Study words</div><div class="mode-desc">Flip cards — word first, then meaning, synonyms and examples</div></div>
+      </div>
+      <div class="mode-card" onclick="startQuiz()">
+        <div class="mode-icon quiz">✏️</div>
+        <div><div class="mode-title">Take quiz</div><div class="mode-desc">10 words in context questions from the full question bank</div></div>
+      </div>
+      <div class="mode-card" onclick="startTabooSetup()">
+        <div class="mode-icon taboo">🙊</div>
+        <div><div class="mode-title">Taboo</div><div class="mode-desc">2-player — describe the word without saying the forbidden words</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDY -->
+<div id="screen-study" class="screen">
+  <div class="hdr">
+    <button class="back" onclick="goHome()">←</button>
+    <span class="hdr-t">Study words</span>
+  </div>
+  <div class="fc-wrap">
+    <div class="fc-counter" id="fc-counter">1 / 60</div>
+    <div class="fc-card" id="fc-card" onclick="flipCard()"></div>
+    <button class="fc-flip-btn" id="fc-flip-btn" onclick="flipCard()">Tap to reveal →</button>
+    <div class="fc-nav">
+      <button class="fc-btn" onclick="fcNav(-1)">← Prev</button>
+      <button class="fc-btn primary" onclick="fcNav(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="screen-question" class="screen">
+  <div class="hdr">
+    <button class="back" onclick="goHome()">←</button>
+    <span class="hdr-t">Quiz</span>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-lbl" id="qpl">Q1 / 10</div>
+    <div class="prog-track"><div class="prog-fill" id="qpf" style="width:10%"></div></div>
+  </div>
+  <div id="qcontent"></div>
+</div>
+
+<!-- TABOO SETUP -->
+<div id="screen-taboo-setup" class="screen">
+  <div class="hdr">
+    <button class="back" onclick="goHome()">←</button>
+    <span class="hdr-t">Taboo</span>
+  </div>
+  <div class="taboo-setup">
+    <p class="taboo-intro">
+      <strong>How to play:</strong> One player describes the target word to the other — but cannot say the word itself or any of the forbidden words shown on the card.<br><br>
+      The guesser looks away while the describer reads the card. Tap <strong>Got it ✓</strong> if the guesser says the word, or <strong>Pass ✗</strong> to skip. 10 cards per round.
+    </p>
+    <div class="sgrid" style="margin-bottom:1.25rem">
+      <div class="sc"><div class="scl">Cards per round</div><div class="scv">10</div></div>
+      <div class="sc"><div class="scl">Timer</div><div class="scv" id="taboo-timer-display">30s</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:1.25rem">
+      <button onclick="setTimer(30)" id="tbtn-30" style="flex:1;padding:10px;border:.5px solid var(--taboo-border);border-radius:var(--rad);background:var(--taboo-bg);color:var(--taboo-txt);font-family:inherit;font-size:14px;cursor:pointer">30s</button>
+      <button onclick="setTimer(45)" id="tbtn-45" style="flex:1;padding:10px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--txt);font-family:inherit;font-size:14px;cursor:pointer">45s</button>
+      <button onclick="setTimer(60)" id="tbtn-60" style="flex:1;padding:10px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--txt);font-family:inherit;font-size:14px;cursor:pointer">60s</button>
+      <button onclick="setTimer(0)"  id="tbtn-0"  style="flex:1;padding:10px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--txt);font-family:inherit;font-size:14px;cursor:pointer">No timer</button>
+    </div>
+    <button class="taboo-start-btn" onclick="startTaboo()">Start game →</button>
+  </div>
+</div>
+
+<!-- TABOO GAME -->
+<div id="screen-taboo" class="screen">
+  <div class="hdr">
+    <button class="back" onclick="endTaboo()">←</button>
+    <span class="hdr-t" id="taboo-hdr">Taboo — Card 1/10</span>
+  </div>
+  <div class="taboo-card-wrap" id="taboo-content"></div>
+</div>
+
+<!-- SUMMARY -->
+<div id="screen-summary" class="screen">
+  <div class="sw">
+    <p class="sh" id="sumh">Done</p>
+    <p class="ss" id="sums">AWL Sublist 1</p>
+    <div class="sgrid">
+      <div class="sc"><div class="scl" id="sum-lbl1">Correct</div><div class="scv" id="sumc">—</div></div>
+      <div class="sc"><div class="scl" id="sum-lbl2">Accuracy</div><div class="scv" id="suma">—</div></div>
+    </div>
+    <p class="slbl" id="missed-lbl">Words to review</p>
+    <div class="missed-list" id="missed-list"></div>
+    <button class="again" id="again-btn">Play again</button>
+    <button class="hret" onclick="goHome()">Back to home</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+<script>
+const WORDS = [
+  {
+    "sublist": 1,
+    "word": "analyse",
+    "pos": "verb",
+    "definition": "to examine something carefully and in detail",
+    "synonyms": [
+      "examine",
+      "investigate",
+      "study",
+      "scrutinise"
+    ],
+    "antonyms": [
+      "ignore",
+      "overlook",
+      "neglect"
+    ],
+    "example_sentence": "Scientists ___ water samples to check for pollution.",
+    "word_family": "analysis, analytical, analyst",
+    "collocations": "carry out an analysis, analyse data, analyse results",
+    "taboo_words": [
+      "examine",
+      "study",
+      "look at",
+      "investigate",
+      "research"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "approach",
+    "pos": "noun / verb",
+    "definition": "a way of dealing with a situation or problem",
+    "synonyms": [
+      "method",
+      "strategy",
+      "technique",
+      "way"
+    ],
+    "antonyms": [
+      "avoidance",
+      "neglect"
+    ],
+    "example_sentence": "The teacher used a creative ___ to explain fractions.",
+    "word_family": "approachable, unapproachable",
+    "collocations": "adopt an approach, take an approach, practical approach",
+    "taboo_words": [
+      "method",
+      "strategy",
+      "way",
+      "technique",
+      "deal with"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "area",
+    "pos": "noun",
+    "definition": "a subject or field of activity",
+    "synonyms": [
+      "field",
+      "domain",
+      "subject",
+      "discipline"
+    ],
+    "antonyms": [
+      "whole",
+      "entirety"
+    ],
+    "example_sentence": "Medicine is an ___ that requires years of study.",
+    "word_family": "areal",
+    "collocations": "subject area, area of research, area of expertise",
+    "taboo_words": [
+      "field",
+      "subject",
+      "domain",
+      "topic",
+      "discipline"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "assess",
+    "pos": "verb",
+    "definition": "to evaluate or judge the quality of something",
+    "synonyms": [
+      "evaluate",
+      "judge",
+      "measure",
+      "appraise"
+    ],
+    "antonyms": [
+      "ignore",
+      "neglect",
+      "overlook"
+    ],
+    "example_sentence": "Doctors ___ patients before deciding on treatment.",
+    "word_family": "assessment, assessor, reassess",
+    "collocations": "assess the situation, assess the risk, assess the impact",
+    "taboo_words": [
+      "evaluate",
+      "judge",
+      "measure",
+      "examine",
+      "appraise"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "assume",
+    "pos": "verb",
+    "definition": "to suppose something is true without proof",
+    "synonyms": [
+      "presume",
+      "suppose",
+      "believe",
+      "take for granted"
+    ],
+    "antonyms": [
+      "know",
+      "prove",
+      "verify",
+      "confirm"
+    ],
+    "example_sentence": "Do not ___ you know the answer without reading carefully.",
+    "word_family": "assumption, assumptive",
+    "collocations": "assume responsibility, assume control, safe to assume",
+    "taboo_words": [
+      "presume",
+      "suppose",
+      "believe",
+      "think",
+      "guess"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "authority",
+    "pos": "noun",
+    "definition": "the power or right to make decisions",
+    "synonyms": [
+      "power",
+      "control",
+      "jurisdiction",
+      "command"
+    ],
+    "antonyms": [
+      "powerlessness",
+      "weakness",
+      "submission"
+    ],
+    "example_sentence": "The school has the ___ to set its own rules.",
+    "word_family": "authorise, authoritative, unauthorised",
+    "collocations": "have authority over, authority figure, in authority",
+    "taboo_words": [
+      "power",
+      "control",
+      "command",
+      "right",
+      "permission"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "available",
+    "pos": "adjective",
+    "definition": "able to be obtained or used",
+    "synonyms": [
+      "accessible",
+      "obtainable",
+      "free",
+      "at hand"
+    ],
+    "antonyms": [
+      "unavailable",
+      "restricted",
+      "inaccessible"
+    ],
+    "example_sentence": "Clean drinking water is not always ___ in dry regions.",
+    "word_family": "availability, unavailable",
+    "collocations": "readily available, available to all, make available",
+    "taboo_words": [
+      "accessible",
+      "obtainable",
+      "free",
+      "open",
+      "on offer"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "benefit",
+    "pos": "noun / verb",
+    "definition": "an advantage or helpful effect",
+    "synonyms": [
+      "advantage",
+      "gain",
+      "reward",
+      "asset"
+    ],
+    "antonyms": [
+      "disadvantage",
+      "harm",
+      "loss",
+      "drawback"
+    ],
+    "example_sentence": "One ___ of reading widely is a stronger vocabulary.",
+    "word_family": "beneficial, beneficiary, benefactor",
+    "collocations": "benefit from, for the benefit of, mutual benefit",
+    "taboo_words": [
+      "advantage",
+      "gain",
+      "reward",
+      "profit",
+      "asset"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "concept",
+    "pos": "noun",
+    "definition": "an idea or principle",
+    "synonyms": [
+      "idea",
+      "notion",
+      "principle",
+      "theory"
+    ],
+    "antonyms": [
+      "reality",
+      "fact",
+      "concrete thing"
+    ],
+    "example_sentence": "Democracy is a ___ that values equal voting rights.",
+    "word_family": "conceptual, conceptualise",
+    "collocations": "basic concept, key concept, grasp a concept",
+    "taboo_words": [
+      "idea",
+      "notion",
+      "principle",
+      "theory",
+      "thought"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "consist",
+    "pos": "verb",
+    "definition": "to be made up of particular parts or elements",
+    "synonyms": [
+      "comprise",
+      "include",
+      "contain",
+      "be composed of"
+    ],
+    "antonyms": [
+      "exclude",
+      "omit",
+      "lack"
+    ],
+    "example_sentence": "A balanced diet should ___ of proteins, carbohydrates, and vitamins.",
+    "word_family": "consistent, consistency, inconsistent",
+    "collocations": "consist of, entirely consists of",
+    "taboo_words": [
+      "comprise",
+      "include",
+      "contain",
+      "be made up of",
+      "involve"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "constitute",
+    "pos": "verb",
+    "definition": "to make up or form something",
+    "synonyms": [
+      "form",
+      "make up",
+      "compose",
+      "represent"
+    ],
+    "antonyms": [
+      "exclude",
+      "omit"
+    ],
+    "example_sentence": "Young people ___ the majority of the country's population.",
+    "word_family": "constitution, constitutional, constituent",
+    "collocations": "constitute a majority, constitute a threat, legally constitute",
+    "taboo_words": [
+      "form",
+      "make up",
+      "compose",
+      "represent",
+      "account for"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "context",
+    "pos": "noun",
+    "definition": "the circumstances surrounding something",
+    "synonyms": [
+      "background",
+      "setting",
+      "circumstances",
+      "situation"
+    ],
+    "antonyms": [
+      "isolation",
+      "vacuum"
+    ],
+    "example_sentence": "You must read the ___ of a sentence to understand unfamiliar words.",
+    "word_family": "contextual, contextualise, contextually",
+    "collocations": "in context, out of context, historical context",
+    "taboo_words": [
+      "background",
+      "setting",
+      "situation",
+      "circumstances",
+      "environment"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "contract",
+    "pos": "noun / verb",
+    "definition": "a formal agreement; or to decrease in size",
+    "synonyms": [
+      "agreement",
+      "deal",
+      "treaty / shrink",
+      "reduce",
+      "decrease"
+    ],
+    "antonyms": [
+      "disagreement / expand",
+      "grow",
+      "extend"
+    ],
+    "example_sentence": "The athlete signed a ___ with the sports club.",
+    "word_family": "contractor, contractual, subcontract",
+    "collocations": "sign a contract, breach a contract, contract work",
+    "taboo_words": [
+      "agreement",
+      "deal",
+      "document",
+      "arrangement",
+      "treaty"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "create",
+    "pos": "verb",
+    "definition": "to make or produce something new",
+    "synonyms": [
+      "make",
+      "produce",
+      "generate",
+      "design"
+    ],
+    "antonyms": [
+      "destroy",
+      "demolish",
+      "eliminate"
+    ],
+    "example_sentence": "Artists ___ works that express human emotions.",
+    "word_family": "creation, creative, creativity, creator",
+    "collocations": "create an opportunity, create a problem, create awareness",
+    "taboo_words": [
+      "make",
+      "produce",
+      "generate",
+      "build",
+      "develop"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "data",
+    "pos": "noun",
+    "definition": "facts and statistics collected for analysis",
+    "synonyms": [
+      "information",
+      "statistics",
+      "facts",
+      "figures"
+    ],
+    "antonyms": [
+      "opinion",
+      "speculation",
+      "guesswork"
+    ],
+    "example_sentence": "Scientists collect ___ over many years before drawing conclusions.",
+    "word_family": "database, data-driven",
+    "collocations": "collect data, analyse data, data suggests, raw data",
+    "taboo_words": [
+      "information",
+      "statistics",
+      "facts",
+      "figures",
+      "evidence"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "define",
+    "pos": "verb",
+    "definition": "to explain the meaning of something",
+    "synonyms": [
+      "explain",
+      "describe",
+      "clarify",
+      "specify"
+    ],
+    "antonyms": [
+      "confuse",
+      "obscure",
+      "complicate"
+    ],
+    "example_sentence": "The dictionary will ___ the word for you.",
+    "word_family": "definition, definite, indefinite, redefine",
+    "collocations": "define a term, clearly define, hard to define",
+    "taboo_words": [
+      "explain",
+      "describe",
+      "clarify",
+      "specify",
+      "outline"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "derive",
+    "pos": "verb",
+    "definition": "to obtain something from a source",
+    "synonyms": [
+      "obtain",
+      "gain",
+      "draw",
+      "get",
+      "extract"
+    ],
+    "antonyms": [
+      "give",
+      "provide",
+      "supply"
+    ],
+    "example_sentence": "Many English words ___ from Latin roots.",
+    "word_family": "derivative, derivation",
+    "collocations": "derive benefit from, derive meaning, derive satisfaction",
+    "taboo_words": [
+      "obtain",
+      "get",
+      "draw",
+      "extract",
+      "take"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "distribute",
+    "pos": "verb",
+    "definition": "to share or spread something among people",
+    "synonyms": [
+      "share",
+      "spread",
+      "hand out",
+      "allocate",
+      "dispense"
+    ],
+    "antonyms": [
+      "collect",
+      "gather",
+      "keep",
+      "centralise"
+    ],
+    "example_sentence": "The charity will ___ food to families in need.",
+    "word_family": "distribution, distributor, redistribution",
+    "collocations": "distribute evenly, distribute resources, distribute power",
+    "taboo_words": [
+      "share",
+      "spread",
+      "hand out",
+      "give out",
+      "allocate"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "economy",
+    "pos": "noun",
+    "definition": "the system of money and trade in a country",
+    "synonyms": [
+      "financial system",
+      "trade",
+      "commerce",
+      "market"
+    ],
+    "antonyms": [
+      "poverty",
+      "underdevelopment"
+    ],
+    "example_sentence": "Tourism plays a vital role in the country's ___.",
+    "word_family": "economic, economical, economist, economise",
+    "collocations": "global economy, boost the economy, economy grows",
+    "taboo_words": [
+      "financial system",
+      "market",
+      "trade",
+      "commerce",
+      "industry"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "environment",
+    "pos": "noun",
+    "definition": "the natural world, or the surroundings in which something exists",
+    "synonyms": [
+      "surroundings",
+      "habitat",
+      "nature",
+      "ecosystem"
+    ],
+    "antonyms": [
+      "built environment",
+      "artificial setting"
+    ],
+    "example_sentence": "Plastic waste is one of the biggest threats to the ___.",
+    "word_family": "environmental, environmentalist, environmentally",
+    "collocations": "protect the environment, natural environment, work environment",
+    "taboo_words": [
+      "surroundings",
+      "habitat",
+      "nature",
+      "setting",
+      "ecosystem"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "establish",
+    "pos": "verb",
+    "definition": "to set up or create something permanent",
+    "synonyms": [
+      "set up",
+      "found",
+      "create",
+      "institute",
+      "build"
+    ],
+    "antonyms": [
+      "abolish",
+      "destroy",
+      "dismantle",
+      "end"
+    ],
+    "example_sentence": "The Red Cross was ___ to help people affected by war.",
+    "word_family": "establishment, established, re-establish",
+    "collocations": "establish a link, well-established, establish contact",
+    "taboo_words": [
+      "set up",
+      "found",
+      "create",
+      "build",
+      "start"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "estimate",
+    "pos": "verb / noun",
+    "definition": "to calculate approximately",
+    "synonyms": [
+      "calculate",
+      "approximate",
+      "gauge",
+      "reckon"
+    ],
+    "antonyms": [
+      "measure exactly",
+      "determine precisely"
+    ],
+    "example_sentence": "Scientists ___ the universe is 13.8 billion years old.",
+    "word_family": "estimation, overestimate, underestimate",
+    "collocations": "rough estimate, conservative estimate, estimate suggests",
+    "taboo_words": [
+      "calculate",
+      "approximate",
+      "guess",
+      "reckon",
+      "judge"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "evident",
+    "pos": "adjective",
+    "definition": "clearly seen or understood",
+    "synonyms": [
+      "obvious",
+      "clear",
+      "apparent",
+      "plain"
+    ],
+    "antonyms": [
+      "hidden",
+      "unclear",
+      "obscure",
+      "concealed"
+    ],
+    "example_sentence": "It was ___ from her smile that she had passed the exam.",
+    "word_family": "evidently, evidence, self-evident",
+    "collocations": "clearly evident, become evident, make evident",
+    "taboo_words": [
+      "obvious",
+      "clear",
+      "apparent",
+      "plain",
+      "visible"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "export",
+    "pos": "verb / noun",
+    "definition": "to send goods to another country for sale",
+    "synonyms": [
+      "sell abroad",
+      "trade",
+      "ship",
+      "sell overseas"
+    ],
+    "antonyms": [
+      "import",
+      "bring in"
+    ],
+    "example_sentence": "Brazil is famous for exporting coffee around the world.",
+    "word_family": "exporter, exportable, re-export",
+    "collocations": "major export, export market, export goods",
+    "taboo_words": [
+      "sell abroad",
+      "trade",
+      "ship",
+      "send",
+      "sell overseas"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "factor",
+    "pos": "noun",
+    "definition": "something that contributes to a result",
+    "synonyms": [
+      "element",
+      "aspect",
+      "cause",
+      "component"
+    ],
+    "antonyms": [
+      "result",
+      "effect",
+      "consequence",
+      "outcome"
+    ],
+    "example_sentence": "Exercise is an important ___ in maintaining good health.",
+    "word_family": "factorial",
+    "collocations": "key factor, contributing factor, risk factor",
+    "taboo_words": [
+      "element",
+      "aspect",
+      "cause",
+      "component",
+      "part"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "finance",
+    "pos": "verb / noun",
+    "definition": "to provide money for something; or the management of money",
+    "synonyms": [
+      "fund",
+      "support",
+      "back / money",
+      "economics",
+      "funding"
+    ],
+    "antonyms": [
+      "defund",
+      "withdraw"
+    ],
+    "example_sentence": "The government agreed to ___ the new hospital.",
+    "word_family": "financial, financially, financier",
+    "collocations": "public finance, finance a project, minister of finance",
+    "taboo_words": [
+      "fund",
+      "pay for",
+      "support",
+      "back",
+      "sponsor"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "formula",
+    "pos": "noun",
+    "definition": "a rule or method expressed in symbols or words",
+    "synonyms": [
+      "rule",
+      "equation",
+      "method",
+      "procedure"
+    ],
+    "antonyms": [
+      "guess",
+      "approximation",
+      "instinct"
+    ],
+    "example_sentence": "There is no magic ___ for success in exams.",
+    "word_family": "formulaic, formulate, formulation",
+    "collocations": "mathematical formula, chemical formula, winning formula",
+    "taboo_words": [
+      "rule",
+      "equation",
+      "method",
+      "procedure",
+      "recipe"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "function",
+    "pos": "noun / verb",
+    "definition": "the purpose or role of something",
+    "synonyms": [
+      "purpose",
+      "role",
+      "job",
+      "use",
+      "task"
+    ],
+    "antonyms": [
+      "malfunction",
+      "failure",
+      "dysfunction"
+    ],
+    "example_sentence": "The main ___ of the heart is to pump blood.",
+    "word_family": "functional, dysfunction, multifunctional",
+    "collocations": "serve a function, main function, function properly",
+    "taboo_words": [
+      "purpose",
+      "role",
+      "job",
+      "use",
+      "task"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "identify",
+    "pos": "verb",
+    "definition": "to recognise or find out who or what something is",
+    "synonyms": [
+      "recognise",
+      "spot",
+      "determine",
+      "detect",
+      "pinpoint"
+    ],
+    "antonyms": [
+      "ignore",
+      "miss",
+      "overlook",
+      "fail to notice"
+    ],
+    "example_sentence": "Police used CCTV to ___ the suspect.",
+    "word_family": "identification, identity, identifiable",
+    "collocations": "identify a problem, identify with, clearly identified",
+    "taboo_words": [
+      "recognise",
+      "spot",
+      "determine",
+      "detect",
+      "find"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "income",
+    "pos": "noun",
+    "definition": "money received regularly for work or investment",
+    "synonyms": [
+      "earnings",
+      "wages",
+      "salary",
+      "revenue",
+      "pay"
+    ],
+    "antonyms": [
+      "expenditure",
+      "spending",
+      "outgoings",
+      "loss"
+    ],
+    "example_sentence": "A higher ___ usually means a better standard of living.",
+    "word_family": "low-income, high-income",
+    "collocations": "household income, income tax, disposable income",
+    "taboo_words": [
+      "earnings",
+      "wages",
+      "salary",
+      "pay",
+      "revenue"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "indicate",
+    "pos": "verb",
+    "definition": "to show or suggest something",
+    "synonyms": [
+      "show",
+      "suggest",
+      "signal",
+      "point to",
+      "imply"
+    ],
+    "antonyms": [
+      "hide",
+      "conceal",
+      "mislead",
+      "obscure"
+    ],
+    "example_sentence": "Rising sea levels ___ that climate change is accelerating.",
+    "word_family": "indication, indicator, indicative",
+    "collocations": "results indicate, clearly indicate, indicate a trend",
+    "taboo_words": [
+      "show",
+      "suggest",
+      "signal",
+      "point to",
+      "demonstrate"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "individual",
+    "pos": "noun / adjective",
+    "definition": "a single person, or relating to one person",
+    "synonyms": [
+      "person",
+      "human being / single",
+      "personal",
+      "particular"
+    ],
+    "antonyms": [
+      "group",
+      "collective",
+      "communal"
+    ],
+    "example_sentence": "Every ___ has the right to a fair trial.",
+    "word_family": "individually, individualism, individualist",
+    "collocations": "every individual, individual needs, individual rights",
+    "taboo_words": [
+      "person",
+      "human",
+      "single",
+      "particular",
+      "specific"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "interpret",
+    "pos": "verb",
+    "definition": "to explain or understand the meaning of something",
+    "synonyms": [
+      "explain",
+      "understand",
+      "translate",
+      "read",
+      "construe"
+    ],
+    "antonyms": [
+      "misunderstand",
+      "confuse",
+      "misinterpret"
+    ],
+    "example_sentence": "Different people may ___ the same poem in different ways.",
+    "word_family": "interpretation, interpreter, misinterpret",
+    "collocations": "interpret results, open to interpretation, interpret data",
+    "taboo_words": [
+      "explain",
+      "understand",
+      "translate",
+      "read",
+      "construe"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "involve",
+    "pos": "verb",
+    "definition": "to include or affect someone or something",
+    "synonyms": [
+      "include",
+      "affect",
+      "require",
+      "encompass",
+      "entail"
+    ],
+    "antonyms": [
+      "exclude",
+      "omit",
+      "leave out"
+    ],
+    "example_sentence": "The project will ___ students from all year groups.",
+    "word_family": "involvement, involved, uninvolved",
+    "collocations": "involve risk, actively involved, involve the community",
+    "taboo_words": [
+      "include",
+      "affect",
+      "require",
+      "need",
+      "entail"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "issue",
+    "pos": "noun",
+    "definition": "an important topic or problem",
+    "synonyms": [
+      "topic",
+      "matter",
+      "problem",
+      "concern",
+      "question"
+    ],
+    "antonyms": [
+      "solution",
+      "answer",
+      "resolution"
+    ],
+    "example_sentence": "Climate change is the most urgent ___ of our time.",
+    "word_family": "issues",
+    "collocations": "key issue, raise an issue, address an issue",
+    "taboo_words": [
+      "topic",
+      "matter",
+      "problem",
+      "concern",
+      "question"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "labour",
+    "pos": "noun",
+    "definition": "work, especially physical work",
+    "synonyms": [
+      "work",
+      "effort",
+      "toil",
+      "workforce",
+      "workers"
+    ],
+    "antonyms": [
+      "rest",
+      "leisure",
+      "idleness",
+      "relaxation"
+    ],
+    "example_sentence": "Building the pyramids required the ___ of thousands of workers.",
+    "word_family": "labourer, laborious, labour-intensive",
+    "collocations": "hard labour, labour market, division of labour",
+    "taboo_words": [
+      "work",
+      "effort",
+      "toil",
+      "workforce",
+      "manpower"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "legal",
+    "pos": "adjective",
+    "definition": "allowed by or connected to the law",
+    "synonyms": [
+      "lawful",
+      "permitted",
+      "valid",
+      "legitimate"
+    ],
+    "antonyms": [
+      "illegal",
+      "unlawful",
+      "forbidden",
+      "prohibited"
+    ],
+    "example_sentence": "It is not ___ to drive without a valid licence.",
+    "word_family": "legally, legalise, illegal, legality",
+    "collocations": "legal advice, legal action, legal system",
+    "taboo_words": [
+      "lawful",
+      "legitimate",
+      "permitted",
+      "valid",
+      "official"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "legislate",
+    "pos": "verb",
+    "definition": "to make laws",
+    "synonyms": [
+      "make laws",
+      "pass laws",
+      "enact",
+      "decree"
+    ],
+    "antonyms": [
+      "repeal",
+      "abolish",
+      "overturn"
+    ],
+    "example_sentence": "Parliament will ___ to protect workers from unfair dismissal.",
+    "word_family": "legislation, legislative, legislator",
+    "collocations": "legislate against, legislate for, power to legislate",
+    "taboo_words": [
+      "pass laws",
+      "make laws",
+      "enact",
+      "decree",
+      "regulate"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "major",
+    "pos": "adjective",
+    "definition": "important, serious, or large in scale",
+    "synonyms": [
+      "important",
+      "significant",
+      "serious",
+      "key",
+      "main"
+    ],
+    "antonyms": [
+      "minor",
+      "trivial",
+      "small",
+      "insignificant"
+    ],
+    "example_sentence": "The discovery of penicillin was a ___ breakthrough in medicine.",
+    "word_family": "majority, majorly",
+    "collocations": "major issue, major role, play a major part",
+    "taboo_words": [
+      "important",
+      "significant",
+      "serious",
+      "key",
+      "main"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "method",
+    "pos": "noun",
+    "definition": "a particular way of doing something",
+    "synonyms": [
+      "way",
+      "approach",
+      "technique",
+      "procedure",
+      "system"
+    ],
+    "antonyms": [
+      "disorder",
+      "randomness",
+      "chaos"
+    ],
+    "example_sentence": "The experimental ___ involves testing ideas through observation.",
+    "word_family": "methodical, methodology, methodically",
+    "collocations": "research method, teaching method, by this method",
+    "taboo_words": [
+      "way",
+      "approach",
+      "technique",
+      "procedure",
+      "system"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "occur",
+    "pos": "verb",
+    "definition": "to happen or take place",
+    "synonyms": [
+      "happen",
+      "take place",
+      "arise",
+      "come about",
+      "emerge"
+    ],
+    "antonyms": [
+      "prevent",
+      "avoid",
+      "stop"
+    ],
+    "example_sentence": "Earthquakes ___ when tectonic plates shift suddenly.",
+    "word_family": "occurrence, reoccur",
+    "collocations": "frequently occurs, occur naturally, when this occurs",
+    "taboo_words": [
+      "happen",
+      "take place",
+      "arise",
+      "come about",
+      "appear"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "percent",
+    "pos": "noun",
+    "definition": "a proportion expressed as a fraction of 100",
+    "synonyms": [
+      "proportion",
+      "fraction",
+      "share",
+      "ratio"
+    ],
+    "antonyms": [
+      "whole",
+      "total"
+    ],
+    "example_sentence": "About 70 ___ of the Earth's surface is covered by water.",
+    "word_family": "percentage, percentile",
+    "collocations": "20 percent, percent increase, what percent",
+    "taboo_words": [
+      "proportion",
+      "fraction",
+      "share",
+      "portion",
+      "ratio"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "period",
+    "pos": "noun",
+    "definition": "a length or stretch of time",
+    "synonyms": [
+      "time",
+      "phase",
+      "era",
+      "stage",
+      "span"
+    ],
+    "antonyms": [
+      "moment",
+      "instant",
+      "point in time"
+    ],
+    "example_sentence": "The Ice Age was a ___ of extreme cold lasting thousands of years.",
+    "word_family": "periodic, periodically",
+    "collocations": "period of time, over a period, historical period",
+    "taboo_words": [
+      "time",
+      "phase",
+      "era",
+      "stage",
+      "spell"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "policy",
+    "pos": "noun",
+    "definition": "a set of rules or a plan of action",
+    "synonyms": [
+      "rules",
+      "guidelines",
+      "plan",
+      "strategy",
+      "approach"
+    ],
+    "antonyms": [
+      "disorder",
+      "flexibility",
+      "absence of rules"
+    ],
+    "example_sentence": "The school has a strict ___ on the use of mobile phones.",
+    "word_family": "policymaker",
+    "collocations": "government policy, policy change, foreign policy",
+    "taboo_words": [
+      "rules",
+      "guidelines",
+      "plan",
+      "strategy",
+      "approach"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "principle",
+    "pos": "noun",
+    "definition": "a basic rule or belief that guides behaviour",
+    "synonyms": [
+      "rule",
+      "belief",
+      "value",
+      "tenet",
+      "standard"
+    ],
+    "antonyms": [
+      "exception",
+      "flexibility",
+      "rule-breaking"
+    ],
+    "example_sentence": "The ___ of fairness means everyone should be treated equally.",
+    "word_family": "principled, unprincipled",
+    "collocations": "on principle, guiding principle, in principle",
+    "taboo_words": [
+      "rule",
+      "belief",
+      "value",
+      "standard",
+      "tenet"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "proceed",
+    "pos": "verb",
+    "definition": "to continue or go forward with something",
+    "synonyms": [
+      "continue",
+      "go ahead",
+      "advance",
+      "carry on",
+      "press on"
+    ],
+    "antonyms": [
+      "stop",
+      "halt",
+      "retreat",
+      "abandon"
+    ],
+    "example_sentence": "The builders were given permission to ___ with construction.",
+    "word_family": "proceedings, procedure, proceeds",
+    "collocations": "proceed with caution, how to proceed, proceed as planned",
+    "taboo_words": [
+      "continue",
+      "go ahead",
+      "carry on",
+      "advance",
+      "press on"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "process",
+    "pos": "noun / verb",
+    "definition": "a series of actions to achieve a result",
+    "synonyms": [
+      "procedure",
+      "method",
+      "system",
+      "sequence",
+      "operation"
+    ],
+    "antonyms": [
+      "disorder",
+      "chaos",
+      "randomness"
+    ],
+    "example_sentence": "Photosynthesis is the ___ by which plants make food from sunlight.",
+    "word_family": "processor, processed, processing",
+    "collocations": "in the process of, complex process, decision-making process",
+    "taboo_words": [
+      "procedure",
+      "method",
+      "system",
+      "sequence",
+      "operation"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "require",
+    "pos": "verb",
+    "definition": "to need something, or to make something necessary",
+    "synonyms": [
+      "need",
+      "demand",
+      "necessitate",
+      "call for",
+      "depend on"
+    ],
+    "antonyms": [
+      "provide",
+      "supply",
+      "offer",
+      "give"
+    ],
+    "example_sentence": "This exercise will ___ concentration and careful reading.",
+    "word_family": "requirement, required, prerequisite",
+    "collocations": "require attention, as required, minimum requirement",
+    "taboo_words": [
+      "need",
+      "demand",
+      "call for",
+      "necessitate",
+      "depend on"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "research",
+    "pos": "noun / verb",
+    "definition": "careful study to discover new facts",
+    "synonyms": [
+      "study",
+      "investigation",
+      "inquiry",
+      "analysis",
+      "exploration"
+    ],
+    "antonyms": [
+      "assumption",
+      "guesswork",
+      "speculation"
+    ],
+    "example_sentence": "Scientists carry out ___ for many years before publishing results.",
+    "word_family": "researcher, research-based",
+    "collocations": "carry out research, research suggests, research into",
+    "taboo_words": [
+      "study",
+      "investigation",
+      "inquiry",
+      "analysis",
+      "examination"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "respond",
+    "pos": "verb",
+    "definition": "to say or do something in reply or reaction",
+    "synonyms": [
+      "reply",
+      "react",
+      "answer",
+      "counter",
+      "react to"
+    ],
+    "antonyms": [
+      "ignore",
+      "stay silent",
+      "fail to respond"
+    ],
+    "example_sentence": "The government was slow to ___ to the flooding disaster.",
+    "word_family": "response, responsive, respondent",
+    "collocations": "respond to a question, respond positively, fail to respond",
+    "taboo_words": [
+      "reply",
+      "react",
+      "answer",
+      "counter",
+      "address"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "role",
+    "pos": "noun",
+    "definition": "the function or position of a person or thing",
+    "synonyms": [
+      "function",
+      "part",
+      "position",
+      "responsibility",
+      "duty"
+    ],
+    "antonyms": [
+      "insignificance",
+      "irrelevance"
+    ],
+    "example_sentence": "Teachers play a vital ___ in a child's development.",
+    "word_family": "role model, role-play",
+    "collocations": "play a role, key role, take on a role",
+    "taboo_words": [
+      "function",
+      "part",
+      "position",
+      "responsibility",
+      "job"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "section",
+    "pos": "noun",
+    "definition": "a distinct part of something larger",
+    "synonyms": [
+      "part",
+      "portion",
+      "segment",
+      "division",
+      "component"
+    ],
+    "antonyms": [
+      "whole",
+      "entirety",
+      "totality"
+    ],
+    "example_sentence": "The final ___ of the paper tests reading comprehension.",
+    "word_family": "sectional, cross-section",
+    "collocations": "in this section, cross-section, section of society",
+    "taboo_words": [
+      "part",
+      "portion",
+      "segment",
+      "division",
+      "piece"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "sector",
+    "pos": "noun",
+    "definition": "a distinct part of the economy or society",
+    "synonyms": [
+      "part",
+      "area",
+      "division",
+      "field",
+      "branch"
+    ],
+    "antonyms": [
+      "whole",
+      "entirety"
+    ],
+    "example_sentence": "The technology ___ has grown rapidly in recent decades.",
+    "word_family": "sectoral",
+    "collocations": "private sector, public sector, sector of the economy",
+    "taboo_words": [
+      "part",
+      "area",
+      "division",
+      "field",
+      "branch"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "significant",
+    "pos": "adjective",
+    "definition": "important or large enough to be noticed",
+    "synonyms": [
+      "important",
+      "notable",
+      "considerable",
+      "substantial",
+      "meaningful"
+    ],
+    "antonyms": [
+      "insignificant",
+      "trivial",
+      "minor",
+      "negligible"
+    ],
+    "example_sentence": "There has been a ___ increase in students studying science.",
+    "word_family": "significantly, significance, insignificant",
+    "collocations": "statistically significant, highly significant, significant change",
+    "taboo_words": [
+      "important",
+      "notable",
+      "considerable",
+      "meaningful",
+      "substantial"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "similar",
+    "pos": "adjective",
+    "definition": "almost the same but not identical",
+    "synonyms": [
+      "alike",
+      "comparable",
+      "close",
+      "related",
+      "parallel"
+    ],
+    "antonyms": [
+      "different",
+      "unlike",
+      "contrasting",
+      "dissimilar"
+    ],
+    "example_sentence": "The two experiments produced ___ results.",
+    "word_family": "similarly, similarity, dissimilar",
+    "collocations": "similar to, in a similar way, broadly similar",
+    "taboo_words": [
+      "alike",
+      "comparable",
+      "close",
+      "equivalent",
+      "related"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "source",
+    "pos": "noun",
+    "definition": "the place or thing from which something comes",
+    "synonyms": [
+      "origin",
+      "cause",
+      "root",
+      "supply",
+      "basis"
+    ],
+    "antonyms": [
+      "result",
+      "effect",
+      "outcome",
+      "product"
+    ],
+    "example_sentence": "The sun is the main ___ of energy for life on Earth.",
+    "word_family": "sourced",
+    "collocations": "primary source, source of income, cite your sources",
+    "taboo_words": [
+      "origin",
+      "cause",
+      "root",
+      "supply",
+      "origin"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "specific",
+    "pos": "adjective",
+    "definition": "clearly defined or identified",
+    "synonyms": [
+      "particular",
+      "precise",
+      "exact",
+      "definite",
+      "explicit"
+    ],
+    "antonyms": [
+      "general",
+      "vague",
+      "broad",
+      "unspecified"
+    ],
+    "example_sentence": "The instructions were very ___ about how to complete the task.",
+    "word_family": "specifically, specification, specify",
+    "collocations": "be specific, specific example, specific to",
+    "taboo_words": [
+      "particular",
+      "precise",
+      "exact",
+      "definite",
+      "clear"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "structure",
+    "pos": "noun",
+    "definition": "the way something is organised or built",
+    "synonyms": [
+      "organisation",
+      "framework",
+      "form",
+      "arrangement",
+      "system"
+    ],
+    "antonyms": [
+      "chaos",
+      "disorder",
+      "randomness",
+      "disorganisation"
+    ],
+    "example_sentence": "The ___ of a good essay includes an introduction and conclusion.",
+    "word_family": "structural, structurally, restructure, unstructured",
+    "collocations": "organisational structure, sentence structure, underlying structure",
+    "taboo_words": [
+      "organisation",
+      "framework",
+      "form",
+      "arrangement",
+      "system"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "theory",
+    "pos": "noun",
+    "definition": "an explanation based on evidence and reasoning",
+    "synonyms": [
+      "explanation",
+      "hypothesis",
+      "idea",
+      "model",
+      "framework"
+    ],
+    "antonyms": [
+      "fact",
+      "proof",
+      "certainty",
+      "established truth"
+    ],
+    "example_sentence": "Darwin's ___ of evolution changed how we understand life on Earth.",
+    "word_family": "theoretical, theorist, theorise",
+    "collocations": "in theory, support a theory, theoretical framework",
+    "taboo_words": [
+      "explanation",
+      "hypothesis",
+      "idea",
+      "model",
+      "concept"
+    ]
+  },
+  {
+    "sublist": 1,
+    "word": "vary",
+    "pos": "verb",
+    "definition": "to be different, or to change",
+    "synonyms": [
+      "differ",
+      "change",
+      "fluctuate",
+      "alternate",
+      "shift"
+    ],
+    "antonyms": [
+      "stay the same",
+      "remain constant",
+      "be uniform"
+    ],
+    "example_sentence": "Temperatures ___ greatly between summer and winter.",
+    "word_family": "variation, variable, variety, varied, various",
+    "collocations": "vary widely, vary considerably, prices vary",
+    "taboo_words": [
+      "differ",
+      "change",
+      "fluctuate",
+      "shift",
+      "alternate"
+    ]
+  }
+];
+
+const QB = [
+  {
+    "word": "analyse",
+    "q_number": 1,
+    "passage": "The scientists decided to ___ the soil samples from three different locations.",
+    "options": [
+      "A) analyse",
+      "B) assume",
+      "C) export",
+      "D) vary"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "analyse",
+    "q_number": 2,
+    "passage": "To write a good essay, students must ___ the question before they begin.",
+    "options": [
+      "A) require",
+      "B) analyse",
+      "C) distribute",
+      "D) consist"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "approach",
+    "q_number": 1,
+    "passage": "Using stories to teach history is a popular ___ in many schools.",
+    "options": [
+      "A) income",
+      "B) approach",
+      "C) percent",
+      "D) labour"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "approach",
+    "q_number": 2,
+    "passage": "The charity's ___ to helping the homeless focuses on long-term support.",
+    "options": [
+      "A) approach",
+      "B) formula",
+      "C) section",
+      "D) role"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "area",
+    "q_number": 1,
+    "passage": "Robotics is an exciting ___ that combines engineering and computing.",
+    "options": [
+      "A) area",
+      "B) percent",
+      "C) income",
+      "D) labour"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "area",
+    "q_number": 2,
+    "passage": "Food security is an ___ of growing concern for world leaders.",
+    "options": [
+      "A) formula",
+      "B) area",
+      "C) sector",
+      "D) method"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "assess",
+    "q_number": 1,
+    "passage": "Judges use strict criteria to ___ entries in the science competition.",
+    "options": [
+      "A) export",
+      "B) define",
+      "C) assess",
+      "D) consist"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "assess",
+    "q_number": 2,
+    "passage": "Before prescribing medicine, a doctor will always ___ the patient's symptoms.",
+    "options": [
+      "A) assess",
+      "B) assume",
+      "C) finance",
+      "D) vary"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "assume",
+    "q_number": 1,
+    "passage": "Many tourists ___ that the locals speak English, but this is not always true.",
+    "options": [
+      "A) identify",
+      "B) assume",
+      "C) respond",
+      "D) legislate"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "assume",
+    "q_number": 2,
+    "passage": "It would be wrong to ___ that all students find reading easy.",
+    "options": [
+      "A) define",
+      "B) export",
+      "C) assume",
+      "D) finance"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "authority",
+    "q_number": 1,
+    "passage": "The planning ___ rejected the proposal to build a new shopping centre.",
+    "options": [
+      "A) formula",
+      "B) authority",
+      "C) income",
+      "D) labour"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "authority",
+    "q_number": 2,
+    "passage": "He is regarded as the leading ___ on ancient Roman history.",
+    "options": [
+      "A) authority",
+      "B) sector",
+      "C) percent",
+      "D) theory"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "available",
+    "q_number": 1,
+    "passage": "Grants are ___ to students who cannot afford university fees.",
+    "options": [
+      "A) legal",
+      "B) available",
+      "C) significant",
+      "D) major"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "available",
+    "q_number": 2,
+    "passage": "Fresh fruit is ___ at the market every morning.",
+    "options": [
+      "A) evident",
+      "B) similar",
+      "C) available",
+      "D) specific"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "benefit",
+    "q_number": 1,
+    "passage": "A key ___ of bilingualism is improved problem-solving skills.",
+    "options": [
+      "A) method",
+      "B) benefit",
+      "C) sector",
+      "D) labour"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "benefit",
+    "q_number": 2,
+    "passage": "The main ___ of solar panels is that they reduce electricity bills.",
+    "options": [
+      "A) benefit",
+      "B) formula",
+      "C) role",
+      "D) percent"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "concept",
+    "q_number": 1,
+    "passage": "The ___ of supply and demand explains how prices change in a market.",
+    "options": [
+      "A) data",
+      "B) concept",
+      "C) labour",
+      "D) income"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "concept",
+    "q_number": 2,
+    "passage": "Infinity is a mathematical ___ that is difficult to visualise.",
+    "options": [
+      "A) concept",
+      "B) formula",
+      "C) section",
+      "D) method"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "consist",
+    "q_number": 1,
+    "passage": "The panel will ___ of three judges chosen by the organisation.",
+    "options": [
+      "A) define",
+      "B) consist",
+      "C) respond",
+      "D) proceed"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "consist",
+    "q_number": 2,
+    "passage": "The meal will ___ of soup, a main course, and dessert.",
+    "options": [
+      "A) consist",
+      "B) finance",
+      "C) derive",
+      "D) export"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "constitute",
+    "q_number": 1,
+    "passage": "Imports from Asia ___ a large proportion of the country's total trade.",
+    "options": [
+      "A) distribute",
+      "B) legislate",
+      "C) constitute",
+      "D) vary"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "constitute",
+    "q_number": 2,
+    "passage": "Volunteers ___ the backbone of many charitable organisations.",
+    "options": [
+      "A) constitute",
+      "B) identify",
+      "C) proceed",
+      "D) define"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "context",
+    "q_number": 1,
+    "passage": "Without knowing the ___, it is hard to understand why the character acted that way.",
+    "options": [
+      "A) income",
+      "B) context",
+      "C) formula",
+      "D) labour"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "context",
+    "q_number": 2,
+    "passage": "Slang words are acceptable in an informal ___ but not in formal writing.",
+    "options": [
+      "A) sector",
+      "B) method",
+      "C) context",
+      "D) role"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "contract",
+    "q_number": 1,
+    "passage": "The footballer signed a three-year ___ with the club.",
+    "options": [
+      "A) contract",
+      "B) formula",
+      "C) section",
+      "D) theory"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "contract",
+    "q_number": 2,
+    "passage": "Metals ___ when they cool down and expand when heated.",
+    "options": [
+      "A) respond",
+      "B) contract",
+      "C) define",
+      "D) export"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "create",
+    "q_number": 1,
+    "passage": "New jobs can be ___ when governments invest in green energy.",
+    "options": [
+      "A) assessed",
+      "B) financed",
+      "C) created",
+      "D) distributed"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "create",
+    "q_number": 2,
+    "passage": "The designer will ___ a new logo for the company.",
+    "options": [
+      "A) create",
+      "B) legislate",
+      "C) vary",
+      "D) consist"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "data",
+    "q_number": 1,
+    "passage": "Without reliable ___, scientists cannot make accurate predictions.",
+    "options": [
+      "A) labour",
+      "B) formula",
+      "C) data",
+      "D) income"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "data",
+    "q_number": 2,
+    "passage": "The survey collected ___ from over 1,000 households across the country.",
+    "options": [
+      "A) data",
+      "B) percent",
+      "C) role",
+      "D) sector"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "define",
+    "q_number": 1,
+    "passage": "Can you ___ what you mean by a 'healthy lifestyle'?",
+    "options": [
+      "A) respond",
+      "B) define",
+      "C) derive",
+      "D) proceed"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "define",
+    "q_number": 2,
+    "passage": "The report fails to clearly ___ what it means by 'poverty'.",
+    "options": [
+      "A) define",
+      "B) assume",
+      "C) finance",
+      "D) export"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "derive",
+    "q_number": 1,
+    "passage": "Aspirin was originally ___ from the bark of willow trees.",
+    "options": [
+      "A) varied",
+      "B) consisted",
+      "C) derived",
+      "D) legislated"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "derive",
+    "q_number": 2,
+    "passage": "Researchers hope to ___ a cure from naturally occurring chemicals.",
+    "options": [
+      "A) derive",
+      "B) identify",
+      "C) assess",
+      "D) export"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "distribute",
+    "q_number": 1,
+    "passage": "Volunteers ___ blankets and hot meals to survivors of the earthquake.",
+    "options": [
+      "A) distribute",
+      "B) finance",
+      "C) require",
+      "D) define"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "distribute",
+    "q_number": 2,
+    "passage": "The supermarket will ___ leaflets advertising its new store.",
+    "options": [
+      "A) respond",
+      "B) distribute",
+      "C) export",
+      "D) vary"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "economy",
+    "q_number": 1,
+    "passage": "A fall in oil prices had a severe impact on the country's ___.",
+    "options": [
+      "A) formula",
+      "B) economy",
+      "C) section",
+      "D) labour"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "economy",
+    "q_number": 2,
+    "passage": "The government introduced new taxes to strengthen the ___.",
+    "options": [
+      "A) economy",
+      "B) income",
+      "C) percent",
+      "D) role"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "environment",
+    "q_number": 1,
+    "passage": "Oil spills cause serious damage to the marine ___.",
+    "options": [
+      "A) formula",
+      "B) method",
+      "C) environment",
+      "D) sector"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "environment",
+    "q_number": 2,
+    "passage": "Cutting down rainforests destroys the natural ___ of many species.",
+    "options": [
+      "A) environment",
+      "B) contract",
+      "C) theory",
+      "D) data"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "establish",
+    "q_number": 1,
+    "passage": "The charity was ___ to provide meals for homeless children.",
+    "options": [
+      "A) established",
+      "B) derived",
+      "C) varied",
+      "D) consisted"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "establish",
+    "q_number": 2,
+    "passage": "Researchers need more evidence to ___ a clear link between diet and disease.",
+    "options": [
+      "A) finance",
+      "B) establish",
+      "C) distribute",
+      "D) proceed"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "estimate",
+    "q_number": 1,
+    "passage": "Experts ___ that sea levels could rise by one metre by 2100.",
+    "options": [
+      "A) estimate",
+      "B) define",
+      "C) export",
+      "D) assume"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "estimate",
+    "q_number": 2,
+    "passage": "The mechanic gave a rough ___ of the repair costs.",
+    "options": [
+      "A) income",
+      "B) estimate",
+      "C) formula",
+      "D) labour"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "evident",
+    "q_number": 1,
+    "passage": "The effects of deforestation are clearly ___ in satellite images.",
+    "options": [
+      "A) legal",
+      "B) major",
+      "C) evident",
+      "D) similar"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "evident",
+    "q_number": 2,
+    "passage": "It was ___ from the noise outside that the match had ended.",
+    "options": [
+      "A) evident",
+      "B) available",
+      "C) significant",
+      "D) specific"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "export",
+    "q_number": 1,
+    "passage": "Japan is well known for exporting cars to countries around the world.",
+    "options": [
+      "A) define",
+      "B) export",
+      "C) respond",
+      "D) consist"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "export",
+    "q_number": 2,
+    "passage": "Oil is the country's most valuable ___.",
+    "options": [
+      "A) export",
+      "B) income",
+      "C) formula",
+      "D) sector"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "factor",
+    "q_number": 1,
+    "passage": "Stress is a significant ___ in many cases of heart disease.",
+    "options": [
+      "A) factor",
+      "B) method",
+      "C) theory",
+      "D) percent"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "factor",
+    "q_number": 2,
+    "passage": "Sleep is often an overlooked ___ in academic performance.",
+    "options": [
+      "A) labour",
+      "B) factor",
+      "C) section",
+      "D) role"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "finance",
+    "q_number": 1,
+    "passage": "The project was ___ by a grant from the European Union.",
+    "options": [
+      "A) financed",
+      "B) defined",
+      "C) varied",
+      "D) assessed"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "finance",
+    "q_number": 2,
+    "passage": "She chose to study ___ because she wanted to work in banking.",
+    "options": [
+      "A) formula",
+      "B) finance",
+      "C) labour",
+      "D) income"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "formula",
+    "q_number": 1,
+    "passage": "Chemists use a ___ to calculate the molecular weight of compounds.",
+    "options": [
+      "A) formula",
+      "B) context",
+      "C) sector",
+      "D) role"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "formula",
+    "q_number": 2,
+    "passage": "There is no ___ that guarantees exam success — hard work is essential.",
+    "options": [
+      "A) income",
+      "B) formula",
+      "C) percent",
+      "D) method"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "function",
+    "q_number": 1,
+    "passage": "The primary ___ of the kidneys is to filter waste from the blood.",
+    "options": [
+      "A) function",
+      "B) data",
+      "C) labour",
+      "D) theory"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "function",
+    "q_number": 2,
+    "passage": "In a team, the ___ of the leader is to guide and motivate others.",
+    "options": [
+      "A) section",
+      "B) function",
+      "C) income",
+      "D) formula"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "identify",
+    "q_number": 1,
+    "passage": "Biologists can ___ a species by examining its DNA.",
+    "options": [
+      "A) identify",
+      "B) assume",
+      "C) export",
+      "D) consist"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "identify",
+    "q_number": 2,
+    "passage": "Can you ___ the main argument in this paragraph?",
+    "options": [
+      "A) define",
+      "B) respond",
+      "C) identify",
+      "D) finance"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "income",
+    "q_number": 1,
+    "passage": "The government introduced a minimum wage to ensure workers earned a fair ___.",
+    "options": [
+      "A) formula",
+      "B) income",
+      "C) sector",
+      "D) labour"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "income",
+    "q_number": 2,
+    "passage": "Families on a low ___ often struggle to pay for housing.",
+    "options": [
+      "A) income",
+      "B) percent",
+      "C) method",
+      "D) role"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "indicate",
+    "q_number": 1,
+    "passage": "Pale skin and tiredness ___ that someone may be anaemic.",
+    "options": [
+      "A) indicate",
+      "B) assume",
+      "C) derive",
+      "D) export"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "indicate",
+    "q_number": 2,
+    "passage": "The graph clearly ___ that sales increased in the final quarter.",
+    "options": [
+      "A) finance",
+      "B) indicate",
+      "C) consist",
+      "D) vary"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "individual",
+    "q_number": 1,
+    "passage": "Every ___ in the country has the right to vote.",
+    "options": [
+      "A) individual",
+      "B) formula",
+      "C) sector",
+      "D) method"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "individual",
+    "q_number": 2,
+    "passage": "The programme is tailored to suit each ___ student's needs.",
+    "options": [
+      "A) labour",
+      "B) individual",
+      "C) percent",
+      "D) theory"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "interpret",
+    "q_number": 1,
+    "passage": "Archaeologists ___ ancient drawings to understand early human life.",
+    "options": [
+      "A) interpret",
+      "B) define",
+      "C) finance",
+      "D) export"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "interpret",
+    "q_number": 2,
+    "passage": "It can be difficult to ___ statistics without the full context.",
+    "options": [
+      "A) assess",
+      "B) respond",
+      "C) interpret",
+      "D) distribute"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "involve",
+    "q_number": 1,
+    "passage": "The clean-up operation will ___ hundreds of volunteers.",
+    "options": [
+      "A) involve",
+      "B) define",
+      "C) export",
+      "D) vary"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "involve",
+    "q_number": 2,
+    "passage": "The new course will ___ a mix of practical and written assessments.",
+    "options": [
+      "A) finance",
+      "B) involve",
+      "C) consist",
+      "D) legislate"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "issue",
+    "q_number": 1,
+    "passage": "Access to education is a major ___ in many developing countries.",
+    "options": [
+      "A) formula",
+      "B) issue",
+      "C) labour",
+      "D) sector"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "issue",
+    "q_number": 2,
+    "passage": "The debate focused on the ___ of rising food prices.",
+    "options": [
+      "A) issue",
+      "B) income",
+      "C) percent",
+      "D) method"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "labour",
+    "q_number": 1,
+    "passage": "Harvesting crops by hand requires significant physical ___.",
+    "options": [
+      "A) labour",
+      "B) formula",
+      "C) income",
+      "D) section"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "labour",
+    "q_number": 2,
+    "passage": "The industrial revolution replaced much human ___ with machines.",
+    "options": [
+      "A) data",
+      "B) labour",
+      "C) sector",
+      "D) role"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "legal",
+    "q_number": 1,
+    "passage": "It is not ___ to sell alcohol to people under the age of 18.",
+    "options": [
+      "A) evident",
+      "B) available",
+      "C) legal",
+      "D) major"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "legal",
+    "q_number": 2,
+    "passage": "The company sought ___ advice before signing the contract.",
+    "options": [
+      "A) legal",
+      "B) similar",
+      "C) specific",
+      "D) significant"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "legislate",
+    "q_number": 1,
+    "passage": "The government plans to ___ to protect endangered species.",
+    "options": [
+      "A) legislate",
+      "B) define",
+      "C) assess",
+      "D) vary"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "legislate",
+    "q_number": 2,
+    "passage": "Many countries have ___ to ban smoking in public places.",
+    "options": [
+      "A) finance",
+      "B) legislated",
+      "C) exported",
+      "D) consisted"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "major",
+    "q_number": 1,
+    "passage": "Lack of clean water is a ___ problem in many parts of Africa.",
+    "options": [
+      "A) legal",
+      "B) major",
+      "C) available",
+      "D) evident"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "major",
+    "q_number": 2,
+    "passage": "The new road is a ___ infrastructure project for the city.",
+    "options": [
+      "A) major",
+      "B) similar",
+      "C) specific",
+      "D) significant"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "method",
+    "q_number": 1,
+    "passage": "The most reliable ___ of testing water quality involves lab analysis.",
+    "options": [
+      "A) sector",
+      "B) formula",
+      "C) method",
+      "D) theory"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "method",
+    "q_number": 2,
+    "passage": "Using mind maps is an effective ___ for organising notes.",
+    "options": [
+      "A) method",
+      "B) income",
+      "C) labour",
+      "D) percent"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "occur",
+    "q_number": 1,
+    "passage": "Floods are likely to ___ more frequently due to climate change.",
+    "options": [
+      "A) finance",
+      "B) occur",
+      "C) define",
+      "D) export"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "occur",
+    "q_number": 2,
+    "passage": "Chemical reactions ___ when two substances combine under the right conditions.",
+    "options": [
+      "A) occur",
+      "B) vary",
+      "C) consist",
+      "D) respond"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "percent",
+    "q_number": 1,
+    "passage": "Approximately 30 ___ of food produced globally is wasted every year.",
+    "options": [
+      "A) percent",
+      "B) income",
+      "C) formula",
+      "D) sector"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "percent",
+    "q_number": 2,
+    "passage": "The population grew by 12 ___ over the past decade.",
+    "options": [
+      "A) labour",
+      "B) percent",
+      "C) method",
+      "D) role"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "period",
+    "q_number": 1,
+    "passage": "The Renaissance was a ___ of great artistic and scientific progress.",
+    "options": [
+      "A) period",
+      "B) section",
+      "C) formula",
+      "D) theory"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "period",
+    "q_number": 2,
+    "passage": "After a ___ of drought, the rains finally arrived.",
+    "options": [
+      "A) income",
+      "B) period",
+      "C) sector",
+      "D) data"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "policy",
+    "q_number": 1,
+    "passage": "The airline's ___ states that passengers must arrive two hours early.",
+    "options": [
+      "A) formula",
+      "B) policy",
+      "C) labour",
+      "D) section"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "policy",
+    "q_number": 2,
+    "passage": "The new immigration ___ has been widely debated in parliament.",
+    "options": [
+      "A) policy",
+      "B) income",
+      "C) percent",
+      "D) role"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "principle",
+    "q_number": 1,
+    "passage": "The ___ of innocent until proven guilty is central to many legal systems.",
+    "options": [
+      "A) principle",
+      "B) formula",
+      "C) sector",
+      "D) theory"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "principle",
+    "q_number": 2,
+    "passage": "The design was based on the ___ that form should follow function.",
+    "options": [
+      "A) income",
+      "B) principle",
+      "C) labour",
+      "D) method"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "proceed",
+    "q_number": 1,
+    "passage": "Despite bad weather, the rescue team decided to ___ with the mission.",
+    "options": [
+      "A) proceed",
+      "B) define",
+      "C) export",
+      "D) vary"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "proceed",
+    "q_number": 2,
+    "passage": "Once the safety checks were complete, the team could ___ with the experiment.",
+    "options": [
+      "A) finance",
+      "B) consist",
+      "C) proceed",
+      "D) respond"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "process",
+    "q_number": 1,
+    "passage": "Digestion is the ___ by which the body breaks down food into nutrients.",
+    "options": [
+      "A) process",
+      "B) formula",
+      "C) income",
+      "D) section"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "process",
+    "q_number": 2,
+    "passage": "The ___ of applying for a visa can take several weeks.",
+    "options": [
+      "A) labour",
+      "B) process",
+      "C) sector",
+      "D) role"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "require",
+    "q_number": 1,
+    "passage": "This qualification will ___ candidates to pass both written and practical tests.",
+    "options": [
+      "A) require",
+      "B) define",
+      "C) export",
+      "D) consist"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "require",
+    "q_number": 2,
+    "passage": "Growing tomatoes successfully does not ___ much space.",
+    "options": [
+      "A) finance",
+      "B) respond",
+      "C) require",
+      "D) derive"
+    ],
+    "correct": "C"
+  },
+  {
+    "word": "research",
+    "q_number": 1,
+    "passage": "Years of ___ led to the development of the first polio vaccine.",
+    "options": [
+      "A) research",
+      "B) formula",
+      "C) labour",
+      "D) income"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "research",
+    "q_number": 2,
+    "passage": "The university received funding to conduct ___ into renewable energy.",
+    "options": [
+      "A) sector",
+      "B) research",
+      "C) percent",
+      "D) method"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "respond",
+    "q_number": 1,
+    "passage": "The firefighters were quick to ___ when the alarm was raised.",
+    "options": [
+      "A) respond",
+      "B) define",
+      "C) finance",
+      "D) export"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "respond",
+    "q_number": 2,
+    "passage": "Pupils are expected to ___ to questions in full sentences.",
+    "options": [
+      "A) vary",
+      "B) respond",
+      "C) consist",
+      "D) legislate"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "role",
+    "q_number": 1,
+    "passage": "Bees play a crucial ___ in pollinating plants and crops.",
+    "options": [
+      "A) role",
+      "B) formula",
+      "C) sector",
+      "D) method"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "role",
+    "q_number": 2,
+    "passage": "Parents play an important ___ in supporting children's learning at home.",
+    "options": [
+      "A) income",
+      "B) role",
+      "C) percent",
+      "D) labour"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "section",
+    "q_number": 1,
+    "passage": "The biology ___ of the exam includes questions on cells and genetics.",
+    "options": [
+      "A) section",
+      "B) formula",
+      "C) theory",
+      "D) income"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "section",
+    "q_number": 2,
+    "passage": "The middle ___ of the article presents both sides of the argument.",
+    "options": [
+      "A) labour",
+      "B) section",
+      "C) percent",
+      "D) method"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "sector",
+    "q_number": 1,
+    "passage": "The private ___ includes businesses that are not owned by the government.",
+    "options": [
+      "A) sector",
+      "B) formula",
+      "C) labour",
+      "D) income"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "sector",
+    "q_number": 2,
+    "passage": "Investment in the education ___ has risen significantly.",
+    "options": [
+      "A) percent",
+      "B) sector",
+      "C) method",
+      "D) role"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "significant",
+    "q_number": 1,
+    "passage": "The new treatment led to a ___ improvement in patients' conditions.",
+    "options": [
+      "A) legal",
+      "B) significant",
+      "C) available",
+      "D) major"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "significant",
+    "q_number": 2,
+    "passage": "The invention of the printing press was a ___ moment in history.",
+    "options": [
+      "A) significant",
+      "B) similar",
+      "C) specific",
+      "D) evident"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "similar",
+    "q_number": 1,
+    "passage": "The two cities have ___ populations but very different cultures.",
+    "options": [
+      "A) legal",
+      "B) similar",
+      "C) major",
+      "D) evident"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "similar",
+    "q_number": 2,
+    "passage": "The results of both studies were remarkably ___.",
+    "options": [
+      "A) similar",
+      "B) available",
+      "C) significant",
+      "D) specific"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "source",
+    "q_number": 1,
+    "passage": "Wind is a renewable ___ of energy that produces no pollution.",
+    "options": [
+      "A) source",
+      "B) formula",
+      "C) sector",
+      "D) theory"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "source",
+    "q_number": 2,
+    "passage": "Students must reference their ___ when writing academic essays.",
+    "options": [
+      "A) income",
+      "B) source",
+      "C) percent",
+      "D) method"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "specific",
+    "q_number": 1,
+    "passage": "Please give ___ examples to support your argument.",
+    "options": [
+      "A) legal",
+      "B) specific",
+      "C) major",
+      "D) available"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "specific",
+    "q_number": 2,
+    "passage": "The instructions were very ___ about the order in which to complete each step.",
+    "options": [
+      "A) specific",
+      "B) similar",
+      "C) significant",
+      "D) evident"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "structure",
+    "q_number": 1,
+    "passage": "The ___ of the company changed after the merger.",
+    "options": [
+      "A) structure",
+      "B) formula",
+      "C) income",
+      "D) labour"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "structure",
+    "q_number": 2,
+    "passage": "A clear ___ helps readers follow the argument in an essay.",
+    "options": [
+      "A) sector",
+      "B) structure",
+      "C) percent",
+      "D) method"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "theory",
+    "q_number": 1,
+    "passage": "Einstein's ___ of relativity transformed our understanding of space and time.",
+    "options": [
+      "A) theory",
+      "B) formula",
+      "C) income",
+      "D) labour"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "theory",
+    "q_number": 2,
+    "passage": "The scientist proposed a new ___ to explain the spread of the disease.",
+    "options": [
+      "A) sector",
+      "B) theory",
+      "C) percent",
+      "D) method"
+    ],
+    "correct": "B"
+  },
+  {
+    "word": "vary",
+    "q_number": 1,
+    "passage": "The price of vegetables can ___ depending on the season.",
+    "options": [
+      "A) vary",
+      "B) define",
+      "C) export",
+      "D) consist"
+    ],
+    "correct": "A"
+  },
+  {
+    "word": "vary",
+    "q_number": 2,
+    "passage": "Reading speeds ___ considerably among students of the same age.",
+    "options": [
+      "A) finance",
+      "B) vary",
+      "C) respond",
+      "D) derive"
+    ],
+    "correct": "B"
+  }
+];
+
+const SLEN = 10;
+let fcIdx = 0, fcOrder = [], fcFlipped = false;
+let S = {session:[],cq:0,results:[],sel:null,submitted:false};
+let T = {session:[],ci:0,correct:0,passed:0,timerSec:30,timerInterval:null,revealed:false};
+
+function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');}
+function goHome(){clearTabooTimer();show('home');}
+
+// ── STUDY ──────────────────────────────────────────────────────────
+function startStudy(){
+  fcOrder = shuffle(WORDS.map((_,i)=>i));
+  fcIdx = 0; fcFlipped = false;
+  show('study'); renderFCFront();
+}
+
+function renderFCFront(){
+  const w = WORDS[fcOrder[fcIdx]];
+  fcFlipped = false;
+  document.getElementById('fc-counter').textContent = `${fcIdx+1} / ${WORDS.length}`;
+  document.getElementById('fc-flip-btn').textContent = 'Tap to reveal →';
+  document.getElementById('fc-flip-btn').style.display = 'block';
+  document.getElementById('fc-card').innerHTML = `
+    <div class="fc-front">
+      <div class="fc-word">${w.word}</div>
+      <div class="fc-pos">${w.pos}</div>
+      <div class="fc-flip-hint">tap card or button to reveal</div>
+    </div>`;
+}
+
+function renderFCBack(){
+  const w = WORDS[fcOrder[fcIdx]];
+  fcFlipped = true;
+  const ex = w.example_sentence.replace(/___/g,`<strong>${w.word}</strong>`);
+  document.getElementById('fc-flip-btn').textContent = 'Flip back ↩';
+  document.getElementById('fc-card').innerHTML = `
+    <div class="fc-back">
+      <div class="fc-front" style="margin-bottom:.25rem">
+        <div class="fc-word" style="font-size:22px">${w.word}</div>
+        <div class="fc-pos">${w.pos}</div>
+      </div>
+      <div class="fc-divider"></div>
+      <div class="fc-row"><div class="fc-lbl">Meaning</div><div class="fc-val">${w.definition}</div></div>
+      <div class="fc-row"><div class="fc-lbl">Synonyms</div><div class="fc-val fc-syn">${w.synonyms.join(', ')}</div></div>
+      <div class="fc-row"><div class="fc-lbl">Antonyms</div><div class="fc-val fc-ant">${w.antonyms.join(', ')}</div></div>
+      <div class="fc-row"><div class="fc-lbl">Example</div><div class="fc-val fc-ex">${ex}</div></div>
+    </div>`;
+}
+
+function flipCard(){
+  if(fcFlipped) renderFCFront(); else renderFCBack();
+}
+
+function fcNav(dir){
+  fcIdx = (fcIdx+dir+WORDS.length)%WORDS.length;
+  renderFCFront(); window.scrollTo(0,0);
+}
+
+// ── QUIZ ───────────────────────────────────────────────────────────
+function startQuiz(){
+  S = {session:shuffle(QB).slice(0,SLEN),cq:0,results:[],sel:null,submitted:false};
+  show('question'); updateProg(); renderQ();
+}
+
+function updateProg(){
+  document.getElementById('qpl').textContent=`Q${S.cq+1} / ${SLEN}`;
+  document.getElementById('qpf').style.width=((S.cq+1)/SLEN*100)+'%';
+}
+
+function renderQ(){
+  const q=S.session[S.cq]; S.sel=null; S.submitted=false;
+  const ph=q.passage.replace(/___/g,'<span class="blank">&nbsp;</span>');
+  const opts=q.options.map((o,i)=>{
+    const k=['A','B','C','D'][i];
+    return `<button class="opt" id="opt-${k}" data-key="${k}" onclick="selOpt('${k}')">
+      <span class="opt-k">${k}</span><span>${o.replace(/^[A-D]\)\s*/,'')}</span></button>`;
+  }).join('');
+  document.getElementById('qcontent').innerHTML=`
+    <div class="pcard"><span class="badge">AWL Sublist 1</span><div class="passage">${ph}</div></div>
+    <div class="opts">${opts}</div>
+    <div class="submit-wrap"><button class="submit-btn" id="subbtn" disabled onclick="submitAns()">Check answer</button></div>
+    <div id="fbarea"></div>`;
+}
+
+function selOpt(k){
+  if(S.submitted)return;
+  S.sel=k;
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.style.border='.5px solid var(--border2)';b.style.background='var(--bg)';b.style.color='var(--txt)';
+  });
+  const btn=document.getElementById('opt-'+k);
+  if(btn){btn.style.border='2px solid #1D9E75';btn.style.background='#E1F5EE';btn.style.color='#085041';}
+  document.getElementById('subbtn').disabled=false;
+}
+
+function submitAns(){
+  if(S.submitted)return; S.submitted=true;
+  document.getElementById('subbtn').disabled=true;
+  const q=S.session[S.cq]; const ok=S.sel===q.correct;
+  S.results.push({w:q.word,d:q.passage,ok});
+  document.querySelectorAll('.opt').forEach(b=>{
+    b.disabled=true;
+    b.style.border='.5px solid var(--border2)';b.style.background='var(--bg)';b.style.color='var(--txt)';
+    const k=b.getAttribute('data-key');
+    if(k===q.correct){b.style.border='2px solid #1D9E75';b.style.background='#E1F5EE';b.style.color='#085041';}
+    else if(k===S.sel&&!ok){b.style.border='2px solid #D85A30';b.style.background='#FAECE7';b.style.color='#4A1B0C';}
+  });
+  const cw=q.options.find(o=>o.startsWith(q.correct)).replace(/^[A-D]\)\s*/,'');
+  const wData = WORDS.find(w=>w.word===q.word)||{};
+  document.getElementById('fbarea').innerHTML=`<div class="fbcard">
+    <div class="fb-hd"><span style="font-size:18px">${ok?'✅':'❌'}</span>
+    <span class="fb-lbl ${ok?'ok':'bad'}">${ok?'Correct':'Incorrect'}</span></div>
+    <div class="fb-txt">${ok
+      ?`<strong>${cw}</strong> fits — the sentence needs a word meaning "${wData.definition||''}".`
+      :`The answer is <strong>${cw}</strong>, which means "${wData.definition||''}".`
+    }</div></div>`;
+  const isLast=S.cq>=SLEN-1;
+  const nxt=document.createElement('button');
+  nxt.className='nxt';nxt.textContent=isLast?'See results':'Next question →';
+  nxt.onclick=isLast?finishQuiz:nextQ;
+  document.getElementById('screen-question').appendChild(nxt);
+}
+
+function nextQ(){S.cq++;document.querySelector('.nxt')?.remove();updateProg();renderQ();window.scrollTo(0,0);}
+
+function finishQuiz(){
+  const correct=S.results.filter(r=>r.ok).length;
+  const pct=Math.round(correct/SLEN*100);
+  document.getElementById('sumh').textContent=pct>=80?'Great work!':pct>=50?'Good effort':'Keep practising';
+  document.getElementById('sums').textContent='AWL Sublist 1 — Quiz';
+  document.getElementById('sum-lbl1').textContent='Correct';
+  document.getElementById('sum-lbl2').textContent='Accuracy';
+  document.getElementById('sumc').textContent=`${correct}/${SLEN}`;
+  document.getElementById('suma').textContent=pct+'%';
+  const missed=S.results.filter(r=>!r.ok);
+  const ml=document.getElementById('missed-list');
+  const lbl=document.getElementById('missed-lbl');
+  if(missed.length===0){
+    lbl.textContent='Perfect score!';
+    ml.innerHTML='<div style="font-size:14px;color:var(--txt2);padding:.5rem 0">All 10 correct — excellent work.</div>';
+  } else {
+    lbl.textContent='Words to review';
+    const wordMap=Object.fromEntries(WORDS.map(w=>[w.word,w.definition]));
+    ml.innerHTML=missed.map(r=>`<div class="missed-item">
+      <span class="missed-word">${r.w}</span>
+      <span class="missed-def">${wordMap[r.w]||''}</span></div>`).join('');
+  }
+  document.getElementById('again-btn').onclick=startQuiz;
+  show('summary');
+}
+
+// ── TABOO ──────────────────────────────────────────────────────────
+function setTimer(sec){
+  T.timerSec=sec;
+  document.getElementById('taboo-timer-display').textContent=sec?sec+'s':'Off';
+  ['30','45','60','0'].forEach(v=>{
+    const btn=document.getElementById('tbtn-'+v);
+    const active=parseInt(v)===sec;
+    btn.style.background=active?'var(--taboo-bg)':'var(--bg)';
+    btn.style.borderColor=active?'var(--taboo-border)':'var(--border2)';
+    btn.style.color=active?'var(--taboo-txt)':'var(--txt)';
+  });
+}
+
+function startTabooSetup(){show('taboo-setup');}
+
+function startTaboo(){
+  T.session=shuffle(WORDS.map((_,i)=>i)).slice(0,SLEN);
+  T.ci=0; T.correct=0; T.passed=0; T.revealed=false;
+  clearTabooTimer();
+  show('taboo');
+  renderTabooReady();
+}
+
+function endTaboo(){
+  clearTabooTimer();
+  goHome();
+}
+
+function renderTabooReady(){
+  T.revealed=false;
+  document.getElementById('taboo-hdr').textContent=`Taboo — Card ${T.ci+1}/10`;
+  document.getElementById('taboo-content').innerHTML=`
+    <div class="taboo-reveal-wrap">
+      <div class="taboo-ready-lbl">Guesser — look away!</div>
+      <div class="taboo-ready-word">• • • • • •</div>
+      <div class="taboo-ready-lbl" style="margin-top:.5rem">Describer — tap when ready</div>
+      <button class="taboo-show-btn" onclick="revealTabooCard()">Show card →</button>
+    </div>`;
+}
+
+function revealTabooCard(){
+  T.revealed=true;
+  const w=WORDS[T.session[T.ci]];
+  const chips=w.taboo_words.map(t=>`<span class="taboo-chip">${t}</span>`).join('');
+  const timerHtml=T.timerSec?`<div class="taboo-timer" id="taboo-clock">${T.timerSec}</div>`:'';
+  document.getElementById('taboo-content').innerHTML=`
+    <div class="taboo-card-wrap">
+      <div class="taboo-card">
+        <div>
+          <div class="taboo-target-lbl">Describe this word</div>
+          <div class="taboo-target-word">${w.word}</div>
+          <div class="taboo-target-pos">${w.pos} — ${w.definition}</div>
+        </div>
+        <div>
+          <div class="taboo-forbidden-lbl">🚫 Cannot say</div>
+          <div class="taboo-forbidden-list">${chips}</div>
+        </div>
+        ${timerHtml}
+        <div class="taboo-actions">
+          <button class="taboo-pass" onclick="tabooResult(false)">✗ Pass</button>
+          <button class="taboo-got"  onclick="tabooResult(true)">✓ Got it!</button>
+        </div>
+      </div>
+    </div>`;
+  if(T.timerSec) startTabooTimer();
+}
+
+function startTabooTimer(){
+  clearTabooTimer();
+  let remaining=T.timerSec;
+  T.timerInterval=setInterval(()=>{
+    remaining--;
+    const el=document.getElementById('taboo-clock');
+    if(!el){clearTabooTimer();return;}
+    el.textContent=remaining;
+    if(remaining<=10) el.classList.add('warning');
+    if(remaining<=0){clearTabooTimer();tabooResult(false);}
+  },1000);
+}
+
+function clearTabooTimer(){
+  if(T.timerInterval){clearInterval(T.timerInterval);T.timerInterval=null;}
+}
+
+function tabooResult(gotIt){
+  clearTabooTimer();
+  if(gotIt) T.correct++; else T.passed++;
+  T.ci++;
+  if(T.ci>=SLEN){finishTaboo();return;}
+  renderTabooReady();
+  window.scrollTo(0,0);
+}
+
+function finishTaboo(){
+  document.getElementById('sumh').textContent=T.correct>=8?'Excellent!':T.correct>=5?'Good round':'Keep practising';
+  document.getElementById('sums').textContent='AWL Sublist 1 — Taboo';
+  document.getElementById('sum-lbl1').textContent='Got it';
+  document.getElementById('sum-lbl2').textContent='Passed';
+  document.getElementById('sumc').textContent=`${T.correct}/${SLEN}`;
+  document.getElementById('suma').textContent=`${T.passed}/${SLEN}`;
+  document.getElementById('missed-lbl').textContent='';
+  document.getElementById('missed-list').innerHTML='';
+  document.getElementById('again-btn').onclick=startTaboo;
+  show('summary');
+}
+</script>
+</body>
+</html>
