@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#1D9E75">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Vocado">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
+<link rel="stylesheet" href="/css/app.css">
+<title>Vocado</title>
+</head>
+<body>
+<div id="app">
+
+<!-- HOME -->
+<div id="screen-home" class="screen active">
+  <div class="hw">
+    <p class="htitle">Vocado</p>
+    <p class="hsub">Academic Word List · Sublist 1</p>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="startStudy()">
+        <div class="mode-icon study">🃏</div>
+        <div><div class="mode-title">Study words</div><div class="mode-desc">Flip cards — word first, then meaning, synonyms and examples</div></div>
+      </div>
+      <div class="mode-card" onclick="startQuiz()">
+        <div class="mode-icon quiz">✏️</div>
+        <div><div class="mode-title">Take quiz</div><div class="mode-desc">10 words in context questions from the full question bank</div></div>
+      </div>
+      <div class="mode-card" onclick="startTabooSetup()">
+        <div class="mode-icon taboo">🙊</div>
+        <div><div class="mode-title">Taboo</div><div class="mode-desc">2-player — describe the word without saying the forbidden words</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- STUDY -->
+<div id="screen-study" class="screen">
+  <div class="hdr">
+    <button class="back" onclick="goHome()">←</button>
+    <span class="hdr-t">Study words</span>
+  </div>
+  <div class="fc-wrap">
+    <div class="fc-counter" id="fc-counter">1 / 60</div>
+    <div class="fc-card" id="fc-card" onclick="flipCard()"></div>
+    <button class="fc-flip-btn" id="fc-flip-btn" onclick="flipCard()">Tap to reveal →</button>
+    <div class="fc-nav">
+      <button class="fc-btn" onclick="fcNav(-1)">← Prev</button>
+      <button class="fc-btn primary" onclick="fcNav(1)">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div id="screen-question" class="screen">
+  <div class="hdr">
+    <button class="back" onclick="goHome()">←</button>
+    <span class="hdr-t">Quiz</span>
+  </div>
+  <div class="prog-wrap">
+    <div class="prog-lbl" id="qpl">Q1 / 10</div>
+    <div class="prog-track"><div class="prog-fill" id="qpf" style="width:10%"></div></div>
+  </div>
+  <div id="qcontent"></div>
+</div>
+
+<!-- TABOO SETUP -->
+<div id="screen-taboo-setup" class="screen">
+  <div class="hdr">
+    <button class="back" onclick="goHome()">←</button>
+    <span class="hdr-t">Taboo</span>
+  </div>
+  <div class="taboo-setup">
+    <p class="taboo-intro">
+      <strong>How to play:</strong> One player describes the target word to the other — but cannot say the word itself or any of the forbidden words shown on the card.<br><br>
+      The guesser looks away while the describer reads the card. Tap <strong>Got it ✓</strong> if the guesser says the word, or <strong>Pass ✗</strong> to skip. 10 cards per round.
+    </p>
+    <div class="sgrid" style="margin-bottom:1.25rem">
+      <div class="sc"><div class="scl">Cards per round</div><div class="scv">10</div></div>
+      <div class="sc"><div class="scl">Timer</div><div class="scv" id="taboo-timer-display">30s</div></div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:1.25rem">
+      <button onclick="setTimer(30)" id="tbtn-30" style="flex:1;padding:10px;border:.5px solid var(--taboo-border);border-radius:var(--rad);background:var(--taboo-bg);color:var(--taboo-txt);font-family:inherit;font-size:14px;cursor:pointer">30s</button>
+      <button onclick="setTimer(45)" id="tbtn-45" style="flex:1;padding:10px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--txt);font-family:inherit;font-size:14px;cursor:pointer">45s</button>
+      <button onclick="setTimer(60)" id="tbtn-60" style="flex:1;padding:10px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--txt);font-family:inherit;font-size:14px;cursor:pointer">60s</button>
+      <button onclick="setTimer(0)"  id="tbtn-0"  style="flex:1;padding:10px;border:.5px solid var(--border2);border-radius:var(--rad);background:var(--bg);color:var(--txt);font-family:inherit;font-size:14px;cursor:pointer">No timer</button>
+    </div>
+    <button class="taboo-start-btn" onclick="startTaboo()">Start game →</button>
+  </div>
+</div>
+
+<!-- TABOO GAME -->
+<div id="screen-taboo" class="screen">
+  <div class="hdr">
+    <button class="back" onclick="endTaboo()">←</button>
+    <span class="hdr-t" id="taboo-hdr">Taboo — Card 1/10</span>
+  </div>
+  <div class="taboo-card-wrap" id="taboo-content"></div>
+</div>
+
+<!-- SUMMARY -->
+<div id="screen-summary" class="screen">
+  <div class="sw">
+    <p class="sh" id="sumh">Done</p>
+    <p class="ss" id="sums">AWL Sublist 1</p>
+    <div class="sgrid">
+      <div class="sc"><div class="scl" id="sum-lbl1">Correct</div><div class="scv" id="sumc">—</div></div>
+      <div class="sc"><div class="scl" id="sum-lbl2">Accuracy</div><div class="scv" id="suma">—</div></div>
+    </div>
+    <p class="slbl" id="missed-lbl">Words to review</p>
+    <div class="missed-list" id="missed-list"></div>
+    <button class="again" id="again-btn">Play again</button>
+    <button class="hret" onclick="goHome()">Back to home</button>
+  </div>
+</div>
+
+</div><!-- /app -->
+<script src="/js/data.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>
