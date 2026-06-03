@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1D9E75">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Vocado">
@@ -20,6 +21,29 @@
   <div class="hw">
     <p class="htitle">Vocado</p>
     <p class="hsub">Academic Word List · Sublist 1</p>
+
+    <div class="stats-strip" id="stats-strip">
+      <div class="stat">
+        <span class="stat-val streak" id="stat-streak">—</span>
+        <span class="stat-lbl">🔥 Streak</span>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <span class="stat-val" id="stat-learnt">0</span>
+        <span class="stat-lbl">Learnt</span>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <span class="stat-val" id="stat-proficient">0</span>
+        <span class="stat-lbl">Proficient</span>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <span class="stat-val" id="stat-mastered">0/60</span>
+        <span class="stat-lbl">Mastered</span>
+      </div>
+    </div>
+
     <div class="mode-grid">
       <div class="mode-card" onclick="startStudy()">
         <div class="mode-icon study">🃏</div>
@@ -119,6 +143,7 @@
 
 </div><!-- /app -->
 <script src="/js/data.js"></script>
+<script src="/js/db.js"></script>
 <script src="/js/app.js"></script>
 </body>
 </html>

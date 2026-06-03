@@ -1,10 +1,11 @@
-const CACHE = 'vocado-v1';
+const CACHE = 'vocado-v2';
 const PRECACHE = [
   '/',
   '/index.html',
   '/css/app.css',
   '/js/app.js',
   '/js/data.js',
+  '/js/db.js',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
@@ -26,6 +27,7 @@ self.addEventListener('activate', e=>{
 
 self.addEventListener('fetch', e=>{
   if(e.request.method!=='GET') return;
+  if(!e.request.url.startsWith(self.location.origin)) return;
   e.respondWith(
     caches.match(e.request).then(cached=>{
       return cached || fetch(e.request).then(res=>{
