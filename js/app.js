@@ -1,17 +1,31 @@
 const SLEN = 10;
 let fcIdx = 0, fcOrder = [], fcFlipped = false;
-let S = {session:[],cq:0,results:[],sel:null,submitted:false};
+let S = {session:[],cq:0,results:[],sel:null,submitted:false,sessionNum:0,statusBefore:{}};
 let T = {session:[],ci:0,correct:0,passed:0,timerSec:30,timerInterval:null,revealed:false};
 
 function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');}
-function goHome(){clearTabooTimer();show('home');}
+function goHome(){clearTabooTimer();show('home');renderStats();}
+
+async function renderStats(){
+  const stats = await getStats(1);
+  const streak = stats.streak;
+  document.getElementById('stat-streak').textContent = streak ? streak : '—';
+  document.getElementById('stat-learnt').textContent = stats.learnt;
+  document.getElementById('stat-proficient').textContent = stats.proficient;
+  document.getElementById('stat-mastered').textContent = `${stats.mastered}/60`;
+}
 
 // ── STUDY ──────────────────────────────────────────────────────────
 function startStudy(){
   fcOrder = shuffle(WORDS.map((_,i)=>i));
   fcIdx = 0; fcFlipped = false;
   show('study'); renderFCFront();
+}
+
+function studyDone(){
+  // record that study mode was completed (used for All Rounder badge later)
+  setState('study_completed', true).catch(()=>{});
 }
 
 function renderFCFront(){
@@ -53,12 +67,29 @@ function flipCard(){
 
 function fcNav(dir){
   fcIdx = (fcIdx+dir+WORDS.length)%WORDS.length;
+  if(fcIdx === WORDS.length - 1 && dir === 1) studyDone();
   renderFCFront(); window.scrollTo(0,0);
 }
 
 // ── QUIZ ───────────────────────────────────────────────────────────
-function startQuiz(){
-  S = {session:shuffle(QB).slice(0,SLEN),cq:0,results:[],sel:null,submitted:false};
+async function startQuiz(){
+  const sessionKey = `session_count_1`;
+  const sessionNum = (await getState(sessionKey)) || 0;
+  const schedules = await loadSchedules(1);
+  const selected = selectSessionQuestions(schedules, sessionNum);
+  const questions = selected.map(s =>
+    QB.find(q => q.word === s.word && q.q_number === s.qNumber)
+  ).filter(Boolean);
+
+  // snapshot word statuses before session for level-up detection
+  const statusBefore = {};
+  for (const s of schedules) {
+    if (!statusBefore[s.word]) {
+      statusBefore[s.word] = getWordStatus(s.q1CorrectCount, s.q2CorrectCount);
+    }
+  }
+
+  S = {session:questions, cq:0, results:[], sel:null, submitted:false, sessionNum, statusBefore};
   show('question'); updateProg(); renderQ();
 }
 
@@ -93,11 +124,12 @@ function selOpt(k){
   document.getElementById('subbtn').disabled=false;
 }
 
-function submitAns(){
+async function submitAns(){
   if(S.submitted)return; S.submitted=true;
   document.getElementById('subbtn').disabled=true;
   const q=S.session[S.cq]; const ok=S.sel===q.correct;
   S.results.push({w:q.word,d:q.passage,ok});
+  await updateQuestionResult(1, q.word, q.q_number, ok, S.sessionNum);
   document.querySelectorAll('.opt').forEach(b=>{
     b.disabled=true;
     b.style.border='.5px solid var(--border2)';b.style.background='var(--bg)';b.style.color='var(--txt)';
@@ -123,28 +155,43 @@ function submitAns(){
 
 function nextQ(){S.cq++;document.querySelector('.nxt')?.remove();updateProg();renderQ();window.scrollTo(0,0);}
 
-function finishQuiz(){
+async function finishQuiz(){
   const correct=S.results.filter(r=>r.ok).length;
-  const pct=Math.round(correct/SLEN*100);
-  document.getElementById('sumh').textContent=pct>=80?'Great work!':pct>=50?'Good effort':'Keep practising';
+  await completeSession(1);
+  const stats = await getStats(1);
+
+  document.getElementById('sumh').textContent=correct===SLEN?'Perfect session!':correct>=7?'Great work!':correct>=5?'Good effort':'Keep going!';
   document.getElementById('sums').textContent='AWL Sublist 1 — Quiz';
-  document.getElementById('sum-lbl1').textContent='Correct';
-  document.getElementById('sum-lbl2').textContent='Accuracy';
+  document.getElementById('sum-lbl1').textContent='This session';
+  document.getElementById('sum-lbl2').textContent='Mastered';
   document.getElementById('sumc').textContent=`${correct}/${SLEN}`;
-  document.getElementById('suma').textContent=pct+'%';
-  const missed=S.results.filter(r=>!r.ok);
+  document.getElementById('suma').textContent=`${stats.mastered}/60`;
+
+  // words that levelled up this session
+  const schedules = await loadSchedules(1);
+  const statusAfter = {};
+  for (const s of schedules) {
+    if (!statusAfter[s.word]) {
+      statusAfter[s.word] = getWordStatus(s.q1CorrectCount, s.q2CorrectCount);
+    }
+  }
+  const levelOrder = ['unknown','learnt','proficient','mastered'];
+  const levelledUp = Object.keys(statusAfter).filter(w =>
+    levelOrder.indexOf(statusAfter[w]) > levelOrder.indexOf(S.statusBefore[w] || 'unknown')
+  );
+
   const ml=document.getElementById('missed-list');
   const lbl=document.getElementById('missed-lbl');
-  if(missed.length===0){
-    lbl.textContent='Perfect score!';
-    ml.innerHTML='<div style="font-size:14px;color:var(--txt2);padding:.5rem 0">All 10 correct — excellent work.</div>';
+  if(levelledUp.length > 0){
+    lbl.textContent='Levelled up';
+    ml.innerHTML=levelledUp.map(w=>`<div class="missed-item">
+      <span class="missed-word">${w}</span>
+      <span class="missed-def" style="color:var(--acc)">${statusAfter[w]}</span></div>`).join('');
   } else {
-    lbl.textContent='Words to review';
-    const wordMap=Object.fromEntries(WORDS.map(w=>[w.word,w.definition]));
-    ml.innerHTML=missed.map(r=>`<div class="missed-item">
-      <span class="missed-word">${r.w}</span>
-      <span class="missed-def">${wordMap[r.w]||''}</span></div>`).join('');
+    lbl.textContent='';
+    ml.innerHTML='';
   }
+
   document.getElementById('again-btn').onclick=startQuiz;
   show('summary');
 }
@@ -255,11 +302,12 @@ function finishTaboo(){
   show('summary');
 }
 
-// ── SERVICE WORKER ─────────────────────────────────────────────────
-if('serviceWorker' in navigator){
-  window.addEventListener('load', ()=>{
+// ── INIT ───────────────────────────────────────────────────────────
+window.addEventListener('load', ()=>{
+  if('serviceWorker' in navigator){
     navigator.serviceWorker.register('/sw.js').catch(err=>{
       console.warn('SW registration failed:', err);
     });
-  });
-}
+  }
+  initDB().then(renderStats).catch(console.warn);
+});

@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vocado — Stats & Badges Preview</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#fff;--bg2:#f5f5f3;--bg3:#eeece8;
+  --txt:#1a1a18;--txt2:#6b6b67;--txt3:#9b9b96;
+  --border:rgba(0,0,0,0.12);--border2:rgba(0,0,0,0.2);
+  --acc:#1D9E75;--acc-bg:#E1F5EE;--acc-txt:#085041;
+  --dan:#D85A30;--dan-bg:#FAECE7;--dan-txt:#4A1B0C;
+  --warn-bg:#FAEEDA;--warn-txt:#633806;--warn-border:#C8820A;
+  --taboo-bg:#F0E8F8;--taboo-txt:#4A1875;--taboo-border:#8B45C8;
+  --rad:8px;--radl:12px
+}
+@media(prefers-color-scheme:dark){
+  :root{
+    --bg:#1c1c1a;--bg2:#252522;--bg3:#2e2e2b;
+    --txt:#f0ede8;--txt2:#a8a8a2;--txt3:#6e6e68;
+    --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+    --acc-bg:#0a3d2a;--acc-txt:#6ee7b7;
+    --dan-bg:#3d1a0a;--dan-txt:#fca98a;
+    --warn-bg:#3d2a08;--warn-txt:#fcd17a;--warn-border:#C8820A;
+    --taboo-bg:#2a1840;--taboo-txt:#d4a8f8;--taboo-border:#8B45C8
+  }
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);color:var(--txt);min-height:100vh}
+.app{max-width:390px;margin:0 auto;padding:0 0 2rem}
+
+/* ── existing home styles (unchanged) ── */
+.hw{padding:1.5rem 1rem 0}
+.htitle{font-size:24px;font-weight:500;margin-bottom:4px}
+.hsub{font-size:14px;color:var(--txt2);margin-bottom:1.25rem}
+.mode-grid{display:flex;flex-direction:column;gap:12px;margin-bottom:1.5rem}
+.mode-card{padding:1.25rem;border:.5px solid var(--border2);border-radius:var(--radl);background:var(--bg);cursor:pointer;display:flex;align-items:center;gap:16px}
+.mode-icon{width:44px;height:44px;border-radius:var(--radl);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.mode-icon.study{background:var(--warn-bg)}
+.mode-icon.quiz{background:var(--acc-bg)}
+.mode-icon.taboo{background:var(--taboo-bg)}
+.mode-title{font-size:16px;font-weight:500;margin-bottom:3px}
+.mode-desc{font-size:13px;color:var(--txt2)}
+
+/* ─────────────────────────────────────────
+   STATS STRIP
+───────────────────────────────────────── */
+.stats-strip{
+  display:flex;
+  margin:0 0 1.5rem;
+  background:var(--bg2);
+  border:.5px solid var(--border);
+  border-radius:var(--radl);
+  overflow:hidden;
+}
+.stat{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:.75rem .25rem;
+  gap:3px;
+}
+.stat-val{
+  font-size:18px;
+  font-weight:600;
+  color:var(--txt);
+  line-height:1;
+  letter-spacing:-.02em;
+}
+.stat-val.streak{ color:var(--dan) }
+.stat-lbl{
+  font-size:10px;
+  color:var(--txt3);
+  text-transform:uppercase;
+  letter-spacing:.07em;
+  font-weight:500;
+}
+.stat-div{
+  width:.5px;
+  background:var(--border);
+  margin:.75rem 0;
+  flex-shrink:0;
+}
+
+/* ─────────────────────────────────────────
+   BADGES SHELF
+───────────────────────────────────────── */
+.badges-section{
+  padding:0 1rem;
+}
+.badges-hdr{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:.75rem;
+}
+.badges-lbl{
+  font-size:11px;
+  font-weight:500;
+  color:var(--txt3);
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.badges-count{
+  font-size:11px;
+  color:var(--txt3);
+}
+.badges-grid{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:8px;
+}
+
+/* base badge */
+.bdg{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:5px;
+  padding:.75rem .25rem .6rem;
+  border-radius:var(--radl);
+  border:.5px solid var(--border);
+  background:var(--bg2);
+  cursor:pointer;
+  position:relative;
+  transition:transform .12s;
+  -webkit-tap-highlight-color:transparent;
+  user-select:none;
+}
+.bdg-icon{ font-size:22px;line-height:1 }
+.bdg-name{
+  font-size:9.5px;
+  text-align:center;
+  color:var(--txt2);
+  line-height:1.25;
+  font-weight:500;
+}
+
+/* locked */
+.bdg.locked{
+  opacity:.35;
+  cursor:default;
+}
+.bdg.locked .bdg-icon{ filter:grayscale(1) }
+
+/* earned — colour by mode */
+.bdg.earned.quiz{
+  border-color:rgba(29,158,117,.35);
+  background:var(--acc-bg);
+}
+.bdg.earned.quiz .bdg-name{ color:var(--acc-txt) }
+
+.bdg.earned.study{
+  border-color:rgba(200,130,10,.4);
+  background:var(--warn-bg);
+}
+.bdg.earned.study .bdg-name{ color:var(--warn-txt) }
+
+.bdg.earned.taboo{
+  border-color:rgba(139,69,200,.35);
+  background:var(--taboo-bg);
+}
+.bdg.earned.taboo .bdg-name{ color:var(--taboo-txt) }
+
+.bdg.earned.all{
+  border-color:rgba(29,158,117,.35);
+  background:linear-gradient(135deg, var(--acc-bg) 0%, var(--taboo-bg) 100%);
+}
+.bdg.earned.all .bdg-name{ color:var(--acc-txt) }
+
+/* active press on earned */
+.bdg.earned:active{ transform:scale(.93) }
+
+/* popover */
+.bdg-pop{
+  display:none;
+  position:absolute;
+  bottom:calc(100% + 8px);
+  left:50%;
+  transform:translateX(-50%);
+  background:var(--txt);
+  color:var(--bg);
+  font-size:11px;
+  line-height:1.4;
+  padding:6px 10px;
+  border-radius:var(--rad);
+  white-space:nowrap;
+  z-index:20;
+  pointer-events:none;
+  text-align:center;
+}
+.bdg-pop::after{
+  content:'';
+  position:absolute;
+  top:100%;left:50%;
+  transform:translateX(-50%);
+  border:5px solid transparent;
+  border-top-color:var(--txt);
+}
+.bdg.open .bdg-pop{
+  display:block;
+  animation:popIn .15s ease;
+}
+
+/* badge unlock animation — add .unlocking class via JS */
+@keyframes unlockPulse{
+  0%  { transform:scale(1); box-shadow:0 0 0 0 var(--acc) }
+  30% { transform:scale(1.18); box-shadow:0 0 0 6px transparent }
+  60% { transform:scale(.96) }
+  100%{ transform:scale(1); box-shadow:none }
+}
+.bdg.unlocking{
+  animation:unlockPulse .55s cubic-bezier(.36,.07,.19,.97) forwards;
+}
+
+@keyframes popIn{
+  from{ opacity:0;transform:translateX(-50%) translateY(4px) scale(.92) }
+  to  { opacity:1;transform:translateX(-50%) translateY(0)   scale(1)    }
+}
+
+/* ── zero-state (no sessions yet) ── */
+.stats-strip.empty .stat-val{ color:var(--txt3);font-size:18px }
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hw">
+    <p class="htitle">Vocado</p>
+    <p class="hsub">Academic Word List · Sublist 1</p>
+
+    <!-- ── STATS STRIP ── -->
+    <div class="stats-strip" id="stats-strip">
+      <div class="stat">
+        <span class="stat-val streak" id="stat-streak">7</span>
+        <span class="stat-lbl">🔥 Streak</span>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <span class="stat-val" id="stat-learnt">18</span>
+        <span class="stat-lbl">Learnt</span>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <span class="stat-val" id="stat-proficient">9</span>
+        <span class="stat-lbl">Proficient</span>
+      </div>
+      <div class="stat-div"></div>
+      <div class="stat">
+        <span class="stat-val" id="stat-mastered">3/60</span>
+        <span class="stat-lbl">Mastered</span>
+      </div>
+    </div>
+
+    <!-- ── MODE CARDS (unchanged) ── -->
+    <div class="mode-grid">
+      <div class="mode-card">
+        <div class="mode-icon study">🃏</div>
+        <div><div class="mode-title">Study words</div><div class="mode-desc">Flip cards — word first, then meaning, synonyms and examples</div></div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-icon quiz">✏️</div>
+        <div><div class="mode-title">Take quiz</div><div class="mode-desc">10 words in context questions from the full question bank</div></div>
+      </div>
+      <div class="mode-card">
+        <div class="mode-icon taboo">🙊</div>
+        <div><div class="mode-title">Taboo</div><div class="mode-desc">2-player — describe the word without saying the forbidden words</div></div>
+      </div>
+    </div>
+
+    <!-- ── BADGES SHELF ── -->
+    <div class="badges-section">
+      <div class="badges-hdr">
+        <span class="badges-lbl">Badges</span>
+        <span class="badges-count" id="badges-count">3 / 8</span>
+      </div>
+      <div class="badges-grid" id="badges-grid">
+
+        <!-- earned -->
+        <div class="bdg earned quiz" onclick="togglePop(this)">
+          <span class="bdg-icon">👣</span>
+          <span class="bdg-name">First Steps</span>
+          <div class="bdg-pop">Complete your<br>first quiz</div>
+        </div>
+
+        <div class="bdg earned quiz" onclick="togglePop(this)">
+          <span class="bdg-icon">📚</span>
+          <span class="bdg-name">Dedicated</span>
+          <div class="bdg-pop">Complete<br>3 quizzes</div>
+        </div>
+
+        <div class="bdg earned taboo" onclick="togglePop(this)">
+          <span class="bdg-icon">🙊</span>
+          <span class="bdg-name">Describer</span>
+          <div class="bdg-pop">Complete a<br>Taboo round</div>
+        </div>
+
+        <!-- locked -->
+        <div class="bdg locked">
+          <span class="bdg-icon">💯</span>
+          <span class="bdg-name">Perfect Ten</span>
+        </div>
+
+        <div class="bdg locked">
+          <span class="bdg-icon">🧠</span>
+          <span class="bdg-name">Word Nerd</span>
+        </div>
+
+        <div class="bdg locked">
+          <span class="bdg-icon">🗺️</span>
+          <span class="bdg-name">Explorer</span>
+        </div>
+
+        <div class="bdg locked">
+          <span class="bdg-icon">🎙️</span>
+          <span class="bdg-name">Smooth Talker</span>
+        </div>
+
+        <div class="bdg locked">
+          <span class="bdg-icon">🏅</span>
+          <span class="bdg-name">All Rounder</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function togglePop(el){
+  const isOpen = el.classList.contains('open');
+  document.querySelectorAll('.bdg.open').forEach(b=>b.classList.remove('open'));
+  if(!isOpen) el.classList.add('open');
+}
+
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.bdg')) {
+    document.querySelectorAll('.bdg.open').forEach(b=>b.classList.remove('open'));
+  }
+});
+</script>
+</body>
+</html>
