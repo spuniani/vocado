@@ -9,7 +9,7 @@ const WORDS = [
     "example_sentence": "Scientists ___ water samples to check for pollution.",
     "word_family": "analysis, analytical, analyst",
     "collocations": "carry out an analysis, analyse data, analyse results",
-    "taboo_words": ["examine","study","look at","investigate","research"]
+    "taboo_words": ["examine","investigate","study","carefully","analysis"]
   },
   {
     "sublist": 1,
@@ -21,7 +21,7 @@ const WORDS = [
     "example_sentence": "The teacher used a creative ___ to explain fractions.",
     "word_family": "approachable, unapproachable",
     "collocations": "adopt an approach, take an approach, practical approach",
-    "taboo_words": ["method","strategy","way","technique","deal with"]
+    "taboo_words": ["strategy","technique","way","deal with","tackle"]
   },
   {
     "sublist": 1,
@@ -105,7 +105,7 @@ const WORDS = [
     "example_sentence": "Democracy is a ___ that values equal voting rights.",
     "word_family": "conceptual, conceptualise",
     "collocations": "basic concept, key concept, grasp a concept",
-    "taboo_words": ["idea","notion","principle","theory","thought"]
+    "taboo_words": ["idea","notion","thought","abstract","conceptual"]
   },
   {
     "sublist": 1,
@@ -117,7 +117,7 @@ const WORDS = [
     "example_sentence": "A balanced diet should ___ of proteins, carbohydrates, and vitamins.",
     "word_family": "consistent, consistency, inconsistent",
     "collocations": "consist of, entirely consists of",
-    "taboo_words": ["comprise","include","contain","be made up of","involve"]
+    "taboo_words": ["comprise","include","contain","be made up of","elements"]
   },
   {
     "sublist": 1,
@@ -141,7 +141,7 @@ const WORDS = [
     "example_sentence": "You must read the ___ of a sentence to understand unfamiliar words.",
     "word_family": "contextual, contextualise, contextually",
     "collocations": "in context, out of context, historical context",
-    "taboo_words": ["background","setting","situation","circumstances","environment"]
+    "taboo_words": ["background","setting","circumstances","surrounding","contextual"]
   },
   {
     "sublist": 1,
@@ -249,7 +249,7 @@ const WORDS = [
     "example_sentence": "The Red Cross was ___ to help people affected by war.",
     "word_family": "establishment, established, re-establish",
     "collocations": "establish a link, well-established, establish contact",
-    "taboo_words": ["set up","found","create","build","start"]
+    "taboo_words": ["set up","found","build","start","establishment"]
   },
   {
     "sublist": 1,
@@ -321,7 +321,7 @@ const WORDS = [
     "example_sentence": "There is no magic ___ for success in exams.",
     "word_family": "formulaic, formulate, formulation",
     "collocations": "mathematical formula, chemical formula, winning formula",
-    "taboo_words": ["rule","equation","method","procedure","recipe"]
+    "taboo_words": ["rule","equation","procedure","recipe","formulation"]
   },
   {
     "sublist": 1,
@@ -333,7 +333,7 @@ const WORDS = [
     "example_sentence": "The main ___ of the heart is to pump blood.",
     "word_family": "functional, dysfunction, multifunctional",
     "collocations": "serve a function, main function, function properly",
-    "taboo_words": ["purpose","role","job","use","task"]
+    "taboo_words": ["purpose","job","use","task","functional"]
   },
   {
     "sublist": 1,
@@ -381,7 +381,7 @@ const WORDS = [
     "example_sentence": "Every ___ has the right to a fair trial.",
     "word_family": "individually, individualism, individualist",
     "collocations": "every individual, individual needs, individual rights",
-    "taboo_words": ["person","human","single","particular","specific"]
+    "taboo_words": ["person","human","single","particular","individually"]
   },
   {
     "sublist": 1,
@@ -405,7 +405,7 @@ const WORDS = [
     "example_sentence": "The project will ___ students from all year groups.",
     "word_family": "involvement, involved, uninvolved",
     "collocations": "involve risk, actively involved, involve the community",
-    "taboo_words": ["include","affect","require","need","entail"]
+    "taboo_words": ["include","affect","entail","encompass","involvement"]
   },
   {
     "sublist": 1,
@@ -465,7 +465,7 @@ const WORDS = [
     "example_sentence": "The discovery of penicillin was a ___ breakthrough in medicine.",
     "word_family": "majority, majorly",
     "collocations": "major issue, major role, play a major part",
-    "taboo_words": ["important","significant","serious","key","main"]
+    "taboo_words": ["important","serious","key","main","large-scale"]
   },
   {
     "sublist": 1,
@@ -477,7 +477,7 @@ const WORDS = [
     "example_sentence": "The experimental ___ involves testing ideas through observation.",
     "word_family": "methodical, methodology, methodically",
     "collocations": "research method, teaching method, by this method",
-    "taboo_words": ["way","approach","technique","procedure","system"]
+    "taboo_words": ["way","technique","procedure","system","methodical"]
   },
   {
     "sublist": 1,
@@ -525,7 +525,7 @@ const WORDS = [
     "example_sentence": "The school has a strict ___ on the use of mobile phones.",
     "word_family": "policymaker",
     "collocations": "government policy, policy change, foreign policy",
-    "taboo_words": ["rules","guidelines","plan","strategy","approach"]
+    "taboo_words": ["rules","guidelines","plan","strategy","action"]
   },
   {
     "sublist": 1,
@@ -561,7 +561,7 @@ const WORDS = [
     "example_sentence": "Photosynthesis is the ___ by which plants make food from sunlight.",
     "word_family": "processor, processed, processing",
     "collocations": "in the process of, complex process, decision-making process",
-    "taboo_words": ["procedure","method","system","sequence","operation"]
+    "taboo_words": ["procedure","system","sequence","operation","processing"]
   },
   {
     "sublist": 1,
@@ -609,7 +609,7 @@ const WORDS = [
     "example_sentence": "Teachers play a vital ___ in a child's development.",
     "word_family": "role model, role-play",
     "collocations": "play a role, key role, take on a role",
-    "taboo_words": ["function","part","position","responsibility","job"]
+    "taboo_words": ["part","position","responsibility","job","duty"]
   },
   {
     "sublist": 1,
@@ -633,7 +633,7 @@ const WORDS = [
     "example_sentence": "The technology ___ has grown rapidly in recent decades.",
     "word_family": "sectoral",
     "collocations": "private sector, public sector, sector of the economy",
-    "taboo_words": ["part","area","division","field","branch"]
+    "taboo_words": ["part","division","field","branch","sectoral"]
   },
   {
     "sublist": 1,
@@ -669,7 +669,7 @@ const WORDS = [
     "example_sentence": "The sun is the main ___ of energy for life on Earth.",
     "word_family": "sourced",
     "collocations": "primary source, source of income, cite your sources",
-    "taboo_words": ["origin","cause","root","supply","origin"]
+    "taboo_words": ["origin","cause","root","supply","basis"]
   },
   {
     "sublist": 1,
@@ -705,7 +705,7 @@ const WORDS = [
     "example_sentence": "Darwin's ___ of evolution changed how we understand life on Earth.",
     "word_family": "theoretical, theorist, theorise",
     "collocations": "in theory, support a theory, theoretical framework",
-    "taboo_words": ["explanation","hypothesis","idea","model","concept"]
+    "taboo_words": ["explanation","hypothesis","idea","model","theoretical"]
   },
   {
     "sublist": 1,
