@@ -1,6 +1,7 @@
 const SLEN = 10;
+let currentListId = 1;
 let fcIdx = 0, fcOrder = [], fcFlipped = false;
-let S = {session:[],cq:0,results:[],sel:null,submitted:false,statusBefore:{}};
+let S = {session:[],cq:0,results:[],sel:null,submitted:false,statusBefore:{},listId:1,isReviewAll:false};
 let T = {session:[],ci:0,correct:0,passed:0,timerSec:30,timerInterval:null,revealed:false};
 
 function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
@@ -8,30 +9,56 @@ function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.re
 function goHome(){clearTabooTimer();show('home');renderStats();}
 
 async function renderStats(){
-  const stats = await getStats(1);
-  const streak = stats.streak;
-  document.getElementById('stat-streak').textContent = streak ? streak : '—';
+  const unlocked = await getUnlockedSublists();
+  const available = [...new Set(WORDS.map(w => w.sublist))].sort((a,b)=>a-b);
+
+  // sublist pill strip
+  document.getElementById('sl-strip').innerHTML = available.map(sl => {
+    const isUnlocked = unlocked.includes(sl);
+    const isActive = sl === currentListId;
+    if (isUnlocked) {
+      return `<button class="sl-pill${isActive?' active':''}" onclick="selectSublist(${sl})">SL ${sl}</button>`;
+    }
+    return `<button class="sl-pill locked"><span class="sl-lock">🔒</span>SL ${sl}</button>`;
+  }).join('');
+
+  // stats for active sublist
+  const stats = await getStats(currentListId);
+  document.getElementById('stat-streak').textContent = stats.streak || '—';
   document.getElementById('stat-learnt').textContent = stats.learnt;
   document.getElementById('stat-proficient').textContent = stats.proficient;
-  document.getElementById('stat-mastered').textContent = `${stats.mastered}/60`;
+  const total = WORDS.filter(w => w.sublist === currentListId).length;
+  document.getElementById('stat-mastered').textContent = `${stats.mastered}/${total}`;
+
+  // show Review All only when at least one sublist is fully mastered
+  let anyMastered = false;
+  for (const sl of unlocked) {
+    if (await isSublistMastered(sl)) { anyMastered = true; break; }
+  }
+  document.getElementById('review-all-card').style.display = anyMastered ? '' : 'none';
+}
+
+function selectSublist(id){
+  currentListId = id;
+  renderStats();
 }
 
 // ── STUDY ──────────────────────────────────────────────────────────
 function startStudy(){
-  fcOrder = shuffle(WORDS.map((_,i)=>i));
+  const indices = WORDS.map((w,i)=>({w,i})).filter(({w})=>w.sublist===currentListId).map(({i})=>i);
+  fcOrder = shuffle(indices);
   fcIdx = 0; fcFlipped = false;
   show('study'); renderFCFront();
 }
 
 function studyDone(){
-  // record that study mode was completed (used for All Rounder badge later)
   setState('study_completed', true).catch(()=>{});
 }
 
 function renderFCFront(){
   const w = WORDS[fcOrder[fcIdx]];
   fcFlipped = false;
-  document.getElementById('fc-counter').textContent = `${fcIdx+1} / ${WORDS.length}`;
+  document.getElementById('fc-counter').textContent = `${fcIdx+1} / ${fcOrder.length}`;
   document.getElementById('fc-flip-btn').textContent = 'Tap to reveal →';
   document.getElementById('fc-flip-btn').style.display = 'block';
   document.getElementById('fc-card').innerHTML = `
@@ -66,14 +93,15 @@ function flipCard(){
 }
 
 function fcNav(dir){
-  fcIdx = (fcIdx+dir+WORDS.length)%WORDS.length;
-  if(fcIdx === WORDS.length - 1 && dir === 1) studyDone();
+  fcIdx = (fcIdx+dir+fcOrder.length)%fcOrder.length;
+  if(fcIdx === fcOrder.length - 1 && dir === 1) studyDone();
   renderFCFront(); window.scrollTo(0,0);
 }
 
 // ── QUIZ ───────────────────────────────────────────────────────────
 async function startQuiz(){
-  const schedules = await loadSchedules(1);
+  const listId = currentListId;
+  const schedules = await loadSchedules(listId);
   const selected = selectSessionQuestions(schedules);
   const questions = selected.map(s => {
     const q = QB.find(q => q.word === s.word && q.level === s.level && q.q_number === s.qNumber);
@@ -81,17 +109,46 @@ async function startQuiz(){
     const wrong = shuffle(q.distractors).slice(0, 3);
     const opts = shuffle([q.word, ...wrong]);
     const correct = ['A','B','C','D'][opts.indexOf(q.word)];
-    return {...q, opts, correct};
+    return {...q, opts, correct, listId};
   }).filter(Boolean);
 
-  // snapshot word statuses before session for level-up detection
   const byWord = groupByWord(schedules);
   const statusBefore = {};
   for (const [word, records] of Object.entries(byWord)) {
     statusBefore[word] = getWordStatus(records);
   }
 
-  S = {session:questions, cq:0, results:[], sel:null, submitted:false, statusBefore};
+  S = {session:questions, cq:0, results:[], sel:null, submitted:false, statusBefore, listId, isReviewAll:false};
+  show('question'); updateProg(); renderQ();
+}
+
+// ── REVIEW ALL ─────────────────────────────────────────────────────
+async function startReviewAll(){
+  const unlocked = await getUnlockedSublists();
+  const masteredIds = [];
+  for (const sl of unlocked) {
+    if (await isSublistMastered(sl)) masteredIds.push(sl);
+  }
+  if (!masteredIds.length) return;
+
+  const schedules = await loadSchedulesMulti(masteredIds);
+  const byWord = groupByWord(schedules);
+  const statusBefore = {};
+  for (const [word, records] of Object.entries(byWord)) {
+    statusBefore[word] = getWordStatus(records);
+  }
+
+  const selected = selectSessionQuestions(schedules);
+  const questions = selected.map(s => {
+    const q = QB.find(q => q.word === s.word && q.level === s.level && q.q_number === s.qNumber);
+    if (!q) return null;
+    const wrong = shuffle(q.distractors).slice(0, 3);
+    const opts = shuffle([q.word, ...wrong]);
+    const correct = ['A','B','C','D'][opts.indexOf(q.word)];
+    return {...q, opts, correct, listId: s.listId};
+  }).filter(Boolean);
+
+  S = {session:questions, cq:0, results:[], sel:null, submitted:false, statusBefore, listId:'review', isReviewAll:true};
   show('question'); updateProg(); renderQ();
 }
 
@@ -104,13 +161,14 @@ function renderQ(){
   if(S.cq >= S.session.length){finishQuiz();return;}
   const q=S.session[S.cq]; S.sel=null; S.submitted=false;
   const ph=q.passage.replace(/___/g,'<span class="blank">&nbsp;</span>');
+  const badgeLbl = S.isReviewAll ? 'Review All' : `AWL Sublist ${S.listId}`;
   const opts=q.opts.map((word,i)=>{
     const k=['A','B','C','D'][i];
     return `<button class="opt" id="opt-${k}" data-key="${k}" onclick="selOpt('${k}')">
       <span class="opt-k">${k}</span><span>${word}</span></button>`;
   }).join('');
   document.getElementById('qcontent').innerHTML=`
-    <div class="pcard"><span class="badge">AWL Sublist 1</span><div class="passage">${ph}</div></div>
+    <div class="pcard"><span class="badge">${badgeLbl}</span><div class="passage">${ph}</div></div>
     <div class="opts">${opts}</div>
     <div class="submit-wrap"><button class="submit-btn" id="subbtn" disabled onclick="submitAns()">Check answer</button></div>
     <div id="fbarea"></div>`;
@@ -132,7 +190,7 @@ async function submitAns(){
   document.getElementById('subbtn').disabled=true;
   const q=S.session[S.cq]; const ok=S.sel===q.correct;
   S.results.push({w:q.word,d:q.passage,ok});
-  await updateQuestionResult(1, q.word, q.level, q.q_number, ok);
+  await updateQuestionResult(q.listId, q.word, q.level, q.q_number, ok);
   document.querySelectorAll('.opt').forEach(b=>{
     b.disabled=true;
     b.style.border='.5px solid var(--border2)';b.style.background='var(--bg)';b.style.color='var(--txt)';
@@ -160,40 +218,83 @@ function nextQ(){S.cq++;document.querySelector('.nxt')?.remove();updateProg();re
 
 async function finishQuiz(){
   const correct=S.results.filter(r=>r.ok).length;
-  await completeSession(1);
-  const stats = await getStats(1);
+  await completeSession(S.listId);
 
-  document.getElementById('sumh').textContent=correct===SLEN?'Perfect session!':correct>=7?'Great work!':correct>=5?'Good effort':'Keep going!';
-  document.getElementById('sums').textContent='AWL Sublist 1 — Quiz';
-  document.getElementById('sum-lbl1').textContent='This session';
-  document.getElementById('sum-lbl2').textContent='Mastered';
-  document.getElementById('sumc').textContent=`${correct}/${SLEN}`;
-  document.getElementById('suma').textContent=`${stats.mastered}/60`;
-
-  // words that levelled up this session
-  const schedules = await loadSchedules(1);
-  const statusAfter = {};
-  for (const [word, records] of Object.entries(groupByWord(schedules))) {
-    statusAfter[word] = getWordStatus(records);
-  }
   const levelOrder = ['unknown','learnt','proficient','mastered'];
-  const levelledUp = Object.keys(statusAfter).filter(w =>
-    levelOrder.indexOf(statusAfter[w]) > levelOrder.indexOf(S.statusBefore[w] || 'unknown')
-  );
+  let levelledUp = [];
+  let unlockMsg = null;
+
+  if (S.isReviewAll) {
+    document.getElementById('sumh').textContent=correct===SLEN?'Perfect session!':correct>=7?'Great work!':correct>=5?'Good effort':'Keep going!';
+    document.getElementById('sums').textContent='Review All — Quiz';
+    document.getElementById('sum-lbl1').textContent='This session';
+    document.getElementById('sum-lbl2').textContent='Correct';
+    document.getElementById('sumc').textContent=`${correct}/${SLEN}`;
+    document.getElementById('suma').textContent=`${correct}/${SLEN}`;
+
+    const schedules = await loadSchedulesMulti(
+      [...new Set(S.session.map(q => q.listId))]
+    );
+    const statusAfter = {};
+    for (const [word, records] of Object.entries(groupByWord(schedules))) {
+      statusAfter[word] = getWordStatus(records);
+    }
+    levelledUp = Object.keys(statusAfter).filter(w =>
+      levelOrder.indexOf(statusAfter[w]) > levelOrder.indexOf(S.statusBefore[w] || 'unknown')
+    );
+    document.getElementById('again-btn').onclick = startReviewAll;
+  } else {
+    const listId = S.listId;
+    const stats = await getStats(listId);
+    const total = WORDS.filter(w => w.sublist === listId).length;
+
+    document.getElementById('sumh').textContent=correct===SLEN?'Perfect session!':correct>=7?'Great work!':correct>=5?'Good effort':'Keep going!';
+    document.getElementById('sums').textContent=`AWL Sublist ${listId} — Quiz`;
+    document.getElementById('sum-lbl1').textContent='This session';
+    document.getElementById('sum-lbl2').textContent='Mastered';
+    document.getElementById('sumc').textContent=`${correct}/${SLEN}`;
+    document.getElementById('suma').textContent=`${stats.mastered}/${total}`;
+
+    const schedules = await loadSchedules(listId);
+    const statusAfter = {};
+    for (const [word, records] of Object.entries(groupByWord(schedules))) {
+      statusAfter[word] = getWordStatus(records);
+    }
+    levelledUp = Object.keys(statusAfter).filter(w =>
+      levelOrder.indexOf(statusAfter[w]) > levelOrder.indexOf(S.statusBefore[w] || 'unknown')
+    );
+
+    // check if this session just unlocked the next sublist
+    const nowMastered = await isSublistMastered(listId);
+    const available = [...new Set(WORDS.map(w => w.sublist))].sort((a,b)=>a-b);
+    const nextSl = available.find(sl => sl === listId + 1);
+    if (nowMastered && nextSl) unlockMsg = `Sublist ${nextSl} unlocked!`;
+
+    document.getElementById('again-btn').onclick = startQuiz;
+  }
 
   const ml=document.getElementById('missed-list');
   const lbl=document.getElementById('missed-lbl');
-  if(levelledUp.length > 0){
-    lbl.textContent='Levelled up';
-    ml.innerHTML=levelledUp.map(w=>`<div class="missed-item">
+  const rows = [];
+  if (unlockMsg) {
+    rows.push(`<div class="missed-item">
+      <span class="missed-word" style="color:var(--acc)">🎉 ${unlockMsg}</span></div>`);
+  }
+  rows.push(...levelledUp.map(w => {
+    const statusAfterVal = S.isReviewAll ? '' : '';
+    return `<div class="missed-item">
       <span class="missed-word">${w}</span>
-      <span class="missed-def" style="color:var(--acc)">${statusAfter[w]}</span></div>`).join('');
+      <span class="missed-def" style="color:var(--acc)">levelled up</span></div>`;
+  }));
+
+  if (rows.length) {
+    lbl.textContent = unlockMsg ? 'Progress' : 'Levelled up';
+    ml.innerHTML = rows.join('');
   } else {
     lbl.textContent='';
     ml.innerHTML='';
   }
 
-  document.getElementById('again-btn').onclick=startQuiz;
   show('summary');
 }
 
@@ -292,7 +393,7 @@ function tabooResult(gotIt){
 
 function finishTaboo(){
   document.getElementById('sumh').textContent=T.correct>=8?'Excellent!':T.correct>=5?'Good round':'Keep practising';
-  document.getElementById('sums').textContent='AWL Sublist 1 — Taboo';
+  document.getElementById('sums').textContent='All Sublists — Taboo';
   document.getElementById('sum-lbl1').textContent='Got it';
   document.getElementById('sum-lbl2').textContent='Passed';
   document.getElementById('sumc').textContent=`${T.correct}/${SLEN}`;

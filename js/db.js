@@ -53,25 +53,52 @@ async function initDB() {
   if (existing.length === QB.length) return;
 
   const existingSet = new Set(existing);
-  const toAdd = QB.filter(q => !existingSet.has(scheduleId(1, q.word, q.level, q.q_number)));
+  const toAdd = QB.filter(q => !existingSet.has(scheduleId((WORDS.find(w => w.word === q.word) || {}).sublist || 1, q.word, q.level, q.q_number)));
   if (!toAdd.length) return;
 
   await tx('question_schedule', 'readwrite', store => {
-    toAdd.forEach(q => store.put({
-      id: scheduleId(1, q.word, q.level, q.q_number),
-      listId: 1,
-      word: q.word,
-      level: q.level,
-      qNumber: q.q_number,
-      timesSeen: 0,
-      correctCount: 0,
-    }));
+    toAdd.forEach(q => {
+      const listId = (WORDS.find(w => w.word === q.word) || {}).sublist || 1;
+      store.put({
+        id: scheduleId(listId, q.word, q.level, q.q_number),
+        listId,
+        word: q.word,
+        level: q.level,
+        qNumber: q.q_number,
+        timesSeen: 0,
+        correctCount: 0,
+      });
+    });
   });
 }
 
 async function loadSchedules(listId) {
   const all = await tx('question_schedule', 'readonly', s => s.getAll());
   return all.filter(r => r.listId === listId);
+}
+
+async function loadSchedulesMulti(listIds) {
+  const all = await tx('question_schedule', 'readonly', s => s.getAll());
+  return all.filter(r => listIds.includes(r.listId));
+}
+
+async function isSublistMastered(listId) {
+  const words = WORDS.filter(w => w.sublist === listId).map(w => w.word);
+  if (!words.length) return false;
+  const schedules = await loadSchedules(listId);
+  const byWord = groupByWord(schedules);
+  return words.every(word => byWord[word] && getWordStatus(byWord[word]) === 'mastered');
+}
+
+async function getUnlockedSublists() {
+  const available = [...new Set(WORDS.map(w => w.sublist))].sort((a, b) => a - b);
+  const unlocked = [];
+  for (const sl of available) {
+    if (sl === 1 || (unlocked.includes(sl - 1) && await isSublistMastered(sl - 1))) {
+      unlocked.push(sl);
+    }
+  }
+  return unlocked;
 }
 
 async function updateQuestionResult(listId, word, level, qNumber, isCorrect) {
