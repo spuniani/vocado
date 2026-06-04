@@ -1,4 +1,4 @@
-const CACHE = 'vocado-v2';
+const CACHE = 'vocado-v3';
 const PRECACHE = [
   '/',
   '/index.html',
@@ -6,6 +6,7 @@ const PRECACHE = [
   '/js/app.js',
   '/js/data.js',
   '/js/db.js',
+  '/js/question-bank.js',
   '/manifest.json',
   '/icons/icon-192.png',
   '/icons/icon-512.png'
