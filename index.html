@@ -20,7 +20,9 @@
 <div id="screen-home" class="screen active">
   <div class="hw">
     <p class="htitle">Vocado</p>
-    <p class="hsub">Academic Word List · Sublist 1</p>
+    <p class="hsub">Academic Word List</p>
+
+    <div class="sl-strip" id="sl-strip"></div>
 
     <div class="stats-strip" id="stats-strip">
       <div class="stat">
@@ -51,11 +53,20 @@
       </div>
       <div class="mode-card" onclick="startQuiz()">
         <div class="mode-icon quiz">✏️</div>
-        <div><div class="mode-title">Take quiz</div><div class="mode-desc">10 words in context questions from the full question bank</div></div>
+        <div><div class="mode-title">Take quiz</div><div class="mode-desc">10 questions in context, paced to your progress in this sublist</div></div>
       </div>
+    </div>
+
+    <div class="section-sep"><span class="section-sep-lbl">All sublists</span></div>
+
+    <div class="mode-grid">
       <div class="mode-card" onclick="startTabooSetup()">
         <div class="mode-icon taboo">🙊</div>
-        <div><div class="mode-title">Taboo</div><div class="mode-desc">2-player — describe the word without saying the forbidden words</div></div>
+        <div><div class="mode-title">Taboo</div><div class="mode-desc">2-player describe-without-forbidden-words game · draws from all words</div></div>
+      </div>
+      <div class="mode-card mode-review" id="review-all-card" onclick="startReviewAll()" style="display:none">
+        <div class="mode-icon review">🔄</div>
+        <div><div class="mode-title">Review All</div><div class="mode-desc">Mixed 10-question session across all mastered sublists</div></div>
       </div>
     </div>
   </div>
