@@ -1,5 +1,5 @@
 const DB_NAME = 'vocado-db';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 let _db = null;
 
 function openDB() {
@@ -8,9 +8,11 @@ function openDB() {
     const req = indexedDB.open(DB_NAME, DB_VERSION);
     req.onupgradeneeded = e => {
       const db = e.target.result;
-      if (!db.objectStoreNames.contains('question_schedule')) {
-        db.createObjectStore('question_schedule', { keyPath: 'id' });
+      // Wipe question_schedule on upgrade — new QB schema is incompatible with v1
+      if (db.objectStoreNames.contains('question_schedule')) {
+        db.deleteObjectStore('question_schedule');
       }
+      db.createObjectStore('question_schedule', { keyPath: 'id' });
       if (!db.objectStoreNames.contains('app_state')) {
         db.createObjectStore('app_state', { keyPath: 'key' });
       }
@@ -39,41 +41,31 @@ function setState(key, value) {
   return tx('app_state', 'readwrite', s => s.put({ key, value }));
 }
 
-function scheduleId(listId, word, qNumber) {
-  return `${listId}:${word}:${qNumber}`;
+function scheduleId(listId, word, level, qNumber) {
+  return `${listId}:${word}:${level}:${qNumber}`;
 }
 
 // ── Public API ────────────────────────────────────────────────────
 
 async function initDB() {
   await openDB();
-  // Seed any missing question_schedule records on first run
   const existing = await tx('question_schedule', 'readonly', s => s.getAllKeys());
   if (existing.length === QB.length) return;
 
-  const toAdd = QB.filter(q => !existing.includes(scheduleId(q.word_list || 1, q.word, q.q_number)));
-  await new Promise((resolve, reject) => {
-    openDB().then(db => {
-      const t = db.transaction('question_schedule', 'readwrite');
-      const store = t.objectStore('question_schedule');
-      toAdd.forEach(q => {
-        const listId = q.word_list || 1;
-        store.put({
-          id: scheduleId(listId, q.word, q.q_number),
-          listId,
-          word: q.word,
-          qNumber: q.q_number,
-          timesSeen: 0,
-          q1CorrectCount: 0,
-          q2CorrectCount: 0,
-          timesCorrect: 0,
-          nextDue: 0,
-          lastResult: null
-        });
-      });
-      t.oncomplete = resolve;
-      t.onerror = e => reject(e.target.error);
-    });
+  const existingSet = new Set(existing);
+  const toAdd = QB.filter(q => !existingSet.has(scheduleId(1, q.word, q.level, q.q_number)));
+  if (!toAdd.length) return;
+
+  await tx('question_schedule', 'readwrite', store => {
+    toAdd.forEach(q => store.put({
+      id: scheduleId(1, q.word, q.level, q.q_number),
+      listId: 1,
+      word: q.word,
+      level: q.level,
+      qNumber: q.q_number,
+      timesSeen: 0,
+      correctCount: 0,
+    }));
   });
 }
 
@@ -82,25 +74,12 @@ async function loadSchedules(listId) {
   return all.filter(r => r.listId === listId);
 }
 
-async function updateQuestionResult(listId, word, qNumber, isCorrect, sessionNum) {
-  const id = scheduleId(listId, word, qNumber);
+async function updateQuestionResult(listId, word, level, qNumber, isCorrect) {
+  const id = scheduleId(listId, word, level, qNumber);
   const rec = await tx('question_schedule', 'readonly', s => s.get(id));
   if (!rec) return;
-
   rec.timesSeen++;
-  rec.lastResult = isCorrect ? 'correct' : 'wrong';
-
-  if (isCorrect) {
-    rec.timesCorrect++;
-    if (qNumber === 1) rec.q1CorrectCount++;
-    else rec.q2CorrectCount++;
-  }
-
-  const intervals = [2, 3, 5, 5];
-  rec.nextDue = isCorrect
-    ? sessionNum + intervals[Math.min(rec.timesCorrect - 1, intervals.length - 1)]
-    : sessionNum + 1;
-
+  if (isCorrect) rec.correctCount++;
   await tx('question_schedule', 'readwrite', s => s.put(rec));
 }
 
@@ -129,46 +108,52 @@ function yesterday() {
   return d.toISOString().slice(0, 10);
 }
 
+function groupByWord(schedules) {
+  const byWord = {};
+  for (const s of schedules) {
+    if (!byWord[s.word]) byWord[s.word] = [];
+    byWord[s.word].push(s);
+  }
+  return byWord;
+}
+
+function getWordStatus(records) {
+  if (records.some(r => r.level === 'master'     && r.correctCount > 0)) return 'mastered';
+  if (records.some(r => r.level === 'proficient' && r.correctCount > 0)) return 'proficient';
+  if (records.some(r => r.level === 'learn'      && r.correctCount > 0)) return 'learnt';
+  return 'unknown';
+}
+
+function selectSessionQuestions(schedules, slen = 10) {
+  const byWord = groupByWord(schedules);
+  const pool = [];
+  for (const records of Object.values(byWord)) {
+    const status = getWordStatus(records);
+    let eligible;
+    if (status === 'mastered') {
+      eligible = records;
+    } else if (status === 'proficient') {
+      eligible = records.filter(r => r.level === 'master');
+    } else if (status === 'learnt') {
+      eligible = records.filter(r => r.level === 'proficient');
+    } else {
+      eligible = records.filter(r => r.level === 'learn');
+    }
+    pool.push(...eligible);
+  }
+  return shuffle(pool).slice(0, slen);
+}
+
 async function getStats(listId) {
   const schedules = await loadSchedules(listId);
-  const wordMap = {};
-  for (const s of schedules) {
-    if (!wordMap[s.word]) wordMap[s.word] = { q1: 0, q2: 0, total: 0 };
-    if (s.qNumber === 1) wordMap[s.word].q1 = s.q1CorrectCount;
-    else wordMap[s.word].q2 = s.q2CorrectCount;
-    wordMap[s.word].total = (wordMap[s.word].q1 || 0) + (wordMap[s.word].q2 || 0);
-  }
-
+  const byWord = groupByWord(schedules);
   let learnt = 0, proficient = 0, mastered = 0;
-  for (const w of Object.values(wordMap)) {
-    const status = getWordStatus(w.q1, w.q2);
+  for (const records of Object.values(byWord)) {
+    const status = getWordStatus(records);
     if (status === 'learnt') learnt++;
     else if (status === 'proficient') proficient++;
     else if (status === 'mastered') mastered++;
   }
-
   const streak = (await getState('streak')) || 0;
   return { learnt, proficient, mastered, streak };
-}
-
-function getWordStatus(q1Correct, q2Correct) {
-  if (!q1Correct && !q2Correct) return 'unknown';
-  if (!q1Correct || !q2Correct) return 'learnt';
-  if (q1Correct + q2Correct < 3) return 'proficient';
-  return 'mastered';
-}
-
-function selectSessionQuestions(schedules, sessionNum, slen = 10) {
-  const newQ     = schedules.filter(s => s.timesSeen === 0);
-  const dueQ     = schedules.filter(s => s.timesSeen > 0 && s.nextDue <= sessionNum);
-  const upcoming = schedules.filter(s => s.timesSeen > 0 && s.nextDue > sessionNum)
-                             .sort((a, b) => a.nextDue - b.nextDue);
-
-  const selected = [];
-  selected.push(...shuffle(dueQ).slice(0, 4));
-  selected.push(...shuffle(newQ).slice(0, slen - selected.length));
-  if (selected.length < slen) {
-    selected.push(...upcoming.slice(0, slen - selected.length));
-  }
-  return shuffle(selected).slice(0, slen);
 }

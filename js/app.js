@@ -1,6 +1,6 @@
 const SLEN = 10;
 let fcIdx = 0, fcOrder = [], fcFlipped = false;
-let S = {session:[],cq:0,results:[],sel:null,submitted:false,sessionNum:0,statusBefore:{}};
+let S = {session:[],cq:0,results:[],sel:null,submitted:false,statusBefore:{}};
 let T = {session:[],ci:0,correct:0,passed:0,timerSec:30,timerInterval:null,revealed:false};
 
 function shuffle(a){return[...a].sort(()=>Math.random()-.5);}
@@ -73,23 +73,25 @@ function fcNav(dir){
 
 // ── QUIZ ───────────────────────────────────────────────────────────
 async function startQuiz(){
-  const sessionKey = `session_count_1`;
-  const sessionNum = (await getState(sessionKey)) || 0;
   const schedules = await loadSchedules(1);
-  const selected = selectSessionQuestions(schedules, sessionNum);
-  const questions = selected.map(s =>
-    QB.find(q => q.word === s.word && q.q_number === s.qNumber)
-  ).filter(Boolean);
+  const selected = selectSessionQuestions(schedules);
+  const questions = selected.map(s => {
+    const q = QB.find(q => q.word === s.word && q.level === s.level && q.q_number === s.qNumber);
+    if (!q) return null;
+    const wrong = shuffle(q.distractors).slice(0, 3);
+    const opts = shuffle([q.word, ...wrong]);
+    const correct = ['A','B','C','D'][opts.indexOf(q.word)];
+    return {...q, opts, correct};
+  }).filter(Boolean);
 
   // snapshot word statuses before session for level-up detection
+  const byWord = groupByWord(schedules);
   const statusBefore = {};
-  for (const s of schedules) {
-    if (!statusBefore[s.word]) {
-      statusBefore[s.word] = getWordStatus(s.q1CorrectCount, s.q2CorrectCount);
-    }
+  for (const [word, records] of Object.entries(byWord)) {
+    statusBefore[word] = getWordStatus(records);
   }
 
-  S = {session:questions, cq:0, results:[], sel:null, submitted:false, sessionNum, statusBefore};
+  S = {session:questions, cq:0, results:[], sel:null, submitted:false, statusBefore};
   show('question'); updateProg(); renderQ();
 }
 
@@ -102,10 +104,10 @@ function renderQ(){
   if(S.cq >= S.session.length){finishQuiz();return;}
   const q=S.session[S.cq]; S.sel=null; S.submitted=false;
   const ph=q.passage.replace(/___/g,'<span class="blank">&nbsp;</span>');
-  const opts=q.options.map((o,i)=>{
+  const opts=q.opts.map((word,i)=>{
     const k=['A','B','C','D'][i];
     return `<button class="opt" id="opt-${k}" data-key="${k}" onclick="selOpt('${k}')">
-      <span class="opt-k">${k}</span><span>${o.replace(/^[A-D]\)\s*/,'')}</span></button>`;
+      <span class="opt-k">${k}</span><span>${word}</span></button>`;
   }).join('');
   document.getElementById('qcontent').innerHTML=`
     <div class="pcard"><span class="badge">AWL Sublist 1</span><div class="passage">${ph}</div></div>
@@ -130,7 +132,7 @@ async function submitAns(){
   document.getElementById('subbtn').disabled=true;
   const q=S.session[S.cq]; const ok=S.sel===q.correct;
   S.results.push({w:q.word,d:q.passage,ok});
-  await updateQuestionResult(1, q.word, q.q_number, ok, S.sessionNum);
+  await updateQuestionResult(1, q.word, q.level, q.q_number, ok);
   document.querySelectorAll('.opt').forEach(b=>{
     b.disabled=true;
     b.style.border='.5px solid var(--border2)';b.style.background='var(--bg)';b.style.color='var(--txt)';
@@ -138,7 +140,7 @@ async function submitAns(){
     if(k===q.correct){b.style.border='2px solid #1D9E75';b.style.background='#E1F5EE';b.style.color='#085041';}
     else if(k===S.sel&&!ok){b.style.border='2px solid #D85A30';b.style.background='#FAECE7';b.style.color='#4A1B0C';}
   });
-  const cw=q.options.find(o=>o.startsWith(q.correct)).replace(/^[A-D]\)\s*/,'');
+  const cw=q.opts[['A','B','C','D'].indexOf(q.correct)];
   const wData = WORDS.find(w=>w.word===q.word)||{};
   document.getElementById('fbarea').innerHTML=`<div class="fbcard">
     <div class="fb-hd"><span style="font-size:18px">${ok?'✅':'❌'}</span>
@@ -171,10 +173,8 @@ async function finishQuiz(){
   // words that levelled up this session
   const schedules = await loadSchedules(1);
   const statusAfter = {};
-  for (const s of schedules) {
-    if (!statusAfter[s.word]) {
-      statusAfter[s.word] = getWordStatus(s.q1CorrectCount, s.q2CorrectCount);
-    }
+  for (const [word, records] of Object.entries(groupByWord(schedules))) {
+    statusAfter[word] = getWordStatus(records);
   }
   const levelOrder = ['unknown','learnt','proficient','mastered'];
   const levelledUp = Object.keys(statusAfter).filter(w =>
