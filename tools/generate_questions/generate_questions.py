@@ -237,7 +237,10 @@ def call_api(client: anthropic.Anthropic, user_message: str, batch_index: int) -
                 f"cache_read: {cached}, cache_created: {created}"
             )
 
-            return response.content[0].text
+            text = response.content[0].text
+            if not text or not text.strip():
+                raise ValueError("API returned empty response — treating as retryable error")
+            return text
 
         except anthropic.RateLimitError:
             delay = BASE_DELAY * (2 ** attempt)
