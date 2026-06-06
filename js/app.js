@@ -188,10 +188,12 @@ function selOpt(k){
 
 async function submitAns(){
   if(S.submitted)return; S.submitted=true;
+  const myS = S;
   document.getElementById('subbtn').disabled=true;
   const q=S.session[S.cq]; const ok=S.sel===q.correct;
   S.results.push({w:q.word,d:q.passage,ok});
   await updateQuestionResult(q.listId, q.word, q.level, q.q_number, ok);
+  if(S !== myS) return;
   document.querySelectorAll('.opt').forEach(b=>{
     b.disabled=true;
     b.style.border='.5px solid var(--border2)';b.style.background='var(--bg)';b.style.color='var(--txt)';
@@ -218,8 +220,10 @@ async function submitAns(){
 function nextQ(){S.cq++;document.querySelector('.nxt')?.remove();updateProg();renderQ();window.scrollTo(0,0);}
 
 async function finishQuiz(){
+  const myS = S;
   const correct=S.results.filter(r=>r.ok).length;
   await completeSession(S.listId);
+  if(S !== myS) return;
 
   const levelOrder = ['unknown','learnt','proficient','mastered'];
   let levelledUp = [];
