@@ -29,13 +29,12 @@ self.addEventListener('activate', e=>{
 self.addEventListener('fetch', e=>{
   if(e.request.method!=='GET') return;
   if(!e.request.url.startsWith(self.location.origin)) return;
+  // Network-first: always fetch fresh content, update cache, fall back to cache when offline
   e.respondWith(
-    caches.match(e.request).then(cached=>{
-      return cached || fetch(e.request).then(res=>{
-        const clone = res.clone();
-        caches.open(CACHE).then(c=>c.put(e.request, clone));
-        return res;
-      });
-    })
+    fetch(e.request).then(res=>{
+      const clone = res.clone();
+      caches.open(CACHE).then(c=>c.put(e.request, clone));
+      return res;
+    }).catch(()=>caches.match(e.request))
   );
 });
