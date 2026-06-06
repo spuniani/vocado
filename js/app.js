@@ -398,7 +398,7 @@ function tabooResult(gotIt){
 
 function finishTaboo(){
   document.getElementById('sumh').textContent=T.correct>=8?'Excellent!':T.correct>=5?'Good round':'Keep practising';
-  document.getElementById('sums').textContent='All Sublists — Taboo';
+  document.getElementById('sums').textContent='All Lists — Taboo';
   document.getElementById('sum-lbl1').textContent='Got it';
   document.getElementById('sum-lbl2').textContent='Passed';
   document.getElementById('sumc').textContent=`${T.correct}/${SLEN}`;
